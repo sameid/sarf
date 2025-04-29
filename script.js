@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Preloaded flashcards array with Arabic words
     const preloadedFlashcards = [
+        { question: "غَضِبَ", answer: "to become angry" },
+        { question: "حَمِدَ", answer: "to praise" },
         { question: "شَبِعَ", answer: "to be full (from eating)" },
         { question: "رَحِمَ", answer: "to have mercy" },
         { question: "رَكِبَ", answer: "to ride" },

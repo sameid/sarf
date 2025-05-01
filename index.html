@@ -5,14 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1e1e1e">
     <meta name="description" content="A simple flashcard app for learning">
-    <title>Flashcard App</title>
+    <title>Arabic Flashcards</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body id="body">
+    <div class="rating-buttons">
+        <button class="rating-button hard">Hard</button>
+        <button class="rating-button good">Good</button>
+        <button class="rating-button easy">Easy</button>
+    </div>
     <div id="flashcards"></div>
-    <button id="nextButton" class="next-button">New verb</button>
+    <button id="revealButton" class="reveal-button">Reveal Answer</button>
     <button id="refreshButton" class="refresh-button">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 2v6h-6"></path>

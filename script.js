@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const flashcardsContainer = document.getElementById('flashcards');
-    const nextButton = document.getElementById('nextButton');
     const refreshButton = document.getElementById('refreshButton');
+    const revealButton = document.getElementById('revealButton');
     let currentCardIndex = 0;
     let isFlipped = false;
 
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { question: "جَهَدَ", answer: "to struggle" },
         { question: "رَجَعَ", answer: "to return" },
         { question: "سَفَرَ", answer: "to travel" },
-        // { question: "ضَلَمَ", answer: "to oppress" },
+        { question: "ضَلَمَ", answer: "to oppress" },
         { question: "سَلَمَ", answer: "to be safe" },
         { question: "شَرَكَ", answer: "to share" },
         { question: "فَسَحَ", answer: "to be spacious" },
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { question: "قَرَبَ", answer: "to be near" },
         { question: "نَصَرَ", answer: "to help" },
         { question: "هَدَفَ", answer: "to approach" },
-        // { question: "فَتَرَ", answer: "to weaken" },
+        { question: "فَتَرَ", answer: "to weaken" },
         { question: "ذَهَبَ", answer: "to go" },
         { question: "رَفَعَ", answer: "to raise" },
         { question: "عَرَفَ", answer: "to know" },
@@ -82,101 +82,95 @@ document.addEventListener('DOMContentLoaded', () => {
         { question: "حَفِزَ", answer: "to guard" },
         { question: "حَسِبَ", answer: "to account" },
         { question: "دَرَجَ", answer: "to go, to walk, to move" },
-        { question: "فَضَلَ", answer: "to have surplus" }
+        { question: "فَضَلَ", answer: "to have surplus" },
+        { question: "إِخْتَلَفَ", answer: "to differ" },
+        { question: "إِسْتَعْجَلَ", answer: "to hurry / to rush" }
     ];
 
     // Load flashcards from localStorage or use preloaded ones
     let flashcards = JSON.parse(localStorage.getItem('flashcards')) || preloadedFlashcards;
+
+    let ratings = JSON.parse(localStorage.getItem('flashcardRatings')) || {};
 
     // Function to save flashcards to localStorage
     const saveFlashcards = () => {
         localStorage.setItem('flashcards', JSON.stringify(flashcards));
     };
 
-    // Function to get a random card index
+    // Function to get a weighted random card index based on ratings
     const getRandomCardIndex = () => {
+        // Calculate weights for each card based on ratings
+        const weights = flashcards.map((_, index) => {
+            const cardRatings = ratings[index] || [];
+            if (cardRatings.length === 0) return 1; // Default weight for unrated cards
+
+            // Get the most recent rating
+            const latestRating = cardRatings[cardRatings.length - 1].rating;
+            
+            // Assign weights based on rating
+            switch (latestRating) {
+                case 'hard':
+                    return 3; // Higher chance for hard cards
+                case 'good':
+                    return 2; // Medium chance for good cards
+                case 'easy':
+                    return 0.5; // Lower chance for easy cards
+                default:
+                    return 1;
+            }
+        });
+
+        // Calculate total weight
+        const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+        
+        // Generate random number between 0 and total weight
+        let random = Math.random() * totalWeight;
+        
+        // Find the card index based on the random number
+        for (let i = 0; i < weights.length; i++) {
+            random -= weights[i];
+
+            console.log(random);
+
+            if (random <= 0) {
+                return i;
+            }
+        }
+        
+        // Fallback to uniform random selection if something goes wrong
         return Math.floor(Math.random() * flashcards.length);
     };
 
     // Function to create a flashcard element
-    const createFlashcardElement = (question, answer) => {
+    const createFlashcardElement = (card, index) => {
         const flashcard = document.createElement('div');
         flashcard.className = 'flashcard';
-        
-        // Randomly decide which side shows the question and which shows the answer
-        const isQuestionOnFront = Math.random() < 0.5;
-        
-        const front = document.createElement('div');
-        front.className = 'front';
-        front.textContent = isQuestionOnFront ? question : answer;
-        front.style.fontFamily = isQuestionOnFront ? "'Scheherazade New', sans-serif" : "'Inter', sans-serif";
+        flashcard.dataset.index = index;
 
-        const back = document.createElement('div');
-        back.className = 'back';
-        back.textContent = isQuestionOnFront ? answer : question;
-        back.style.fontFamily = isQuestionOnFront ? "'Inter', sans-serif" : "'Scheherazade New', sans-serif";
+        const isQuestionFirst = Math.random() < 0.5;
+        const frontContent = isQuestionFirst ? card.question : card.answer;
+        const backContent = isQuestionFirst ? card.answer : card.question;
 
-        flashcard.appendChild(front);
-        flashcard.appendChild(back);
+        flashcard.innerHTML = `
+            <div class="front">${frontContent}</div>
+            <div class="back">${backContent}</div>
+        `;
 
         return flashcard;
     };
 
-    // Function to handle next button click
-    const handleNextClick = (e) => {
+    // Function to handle reveal button click
+    const handleRevealClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        // Reset the card to front side before changing
-        const flashcard = document.querySelector('.flashcard');
-        if (flashcard) {
-            flashcard.style.transform = 'rotateY(0deg)';
-            isFlipped = false;
-        }
-        // Change to new card after a short delay
-        setTimeout(() => {
-            currentCardIndex = getRandomCardIndex();
-            renderCurrentFlashcard();
-        }, 50);
-    };
-
-    // Function to handle start of interaction (mouse down or touch start)
-    const handleStart = (e) => {
-        e.preventDefault();
-
-        if (e.target === document.getElementById('nextButton') || e.target === document.getElementById('refreshButton')) {
-            return;
-        }
 
         const flashcard = document.querySelector('.flashcard');
-        if (flashcard) {
+        if (flashcard && !isFlipped) {
             flashcard.style.transform = 'rotateY(180deg)';
             isFlipped = true;
+            showRatingButtons();
+            setupRatingButtons(flashcard.dataset.index);
         }
-    };
-
-    // Function to handle end of interaction (mouse up or touch end)
-    const handleEnd = (e) => {
-        e.preventDefault();
-        
-        
-        if (e.target === document.getElementById('nextButton') || e.target === document.getElementById('refreshButton')) {
-            return;
-        }
-
-        const flashcard = document.querySelector('.flashcard');
-        if (flashcard) {
-            flashcard.style.transform = 'rotateY(0deg)';
-            isFlipped = false;
-        }
-    };
-
-    // Function to remove all event listeners
-    const removeEventListeners = () => {
-        document.removeEventListener('mousedown', handleStart);
-        document.removeEventListener('mouseup', handleEnd);
-        document.removeEventListener('touchstart', handleStart);
-        document.removeEventListener('touchend', handleEnd);
     };
 
     // Function to render current flashcard
@@ -184,19 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
         flashcardsContainer.innerHTML = '';
         if (flashcards.length > 0) {
             const flashcardElement = createFlashcardElement(
-                flashcards[currentCardIndex].question,
-                flashcards[currentCardIndex].answer
+                flashcards[currentCardIndex],
+                currentCardIndex
             );
             flashcardsContainer.appendChild(flashcardElement);
-            
-            // Remove old event listeners before adding new ones
-            removeEventListeners();
-            
-            // Add mouse and touch events to the entire document
-            document.addEventListener('mousedown', handleStart);
-            document.addEventListener('mouseup', handleEnd);
-            document.addEventListener('touchstart', handleStart);
-            document.addEventListener('touchend', handleEnd);
+            isFlipped = false;
+            hideRatingButtons();
         } else {
             flashcardsContainer.innerHTML = '<p>No flashcards available</p>';
         }
@@ -220,13 +207,60 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.reload(true);
     };
 
-    // Add event listeners to next button
-    nextButton.addEventListener('click', handleNextClick);
-    nextButton.addEventListener('touchend', handleNextClick);
+    function showRatingButtons() {
+        const ratingButtons = document.querySelector('.rating-buttons');
+        const revealButton = document.getElementById('revealButton');
+        ratingButtons.style.display = 'flex';
+        revealButton.style.display = 'none';
+    }
 
-    // Add event listeners to refresh button
+    function hideRatingButtons() {
+        const ratingButtons = document.querySelector('.rating-buttons');
+        const revealButton = document.getElementById('revealButton');
+        ratingButtons.style.display = 'none';
+        revealButton.style.display = 'block';
+    }
+
+    function saveRating(cardId, rating) {
+        if (!ratings[cardId]) {
+            ratings[cardId] = [];
+        }
+        ratings[cardId].push({
+            rating,
+            timestamp: Date.now()
+        });
+        localStorage.setItem('flashcardRatings', JSON.stringify(ratings));
+    }
+
+    function getNextCard() {
+        const currentCard = document.querySelector('.flashcard');
+        if (currentCard) {
+            currentCard.remove();
+        }
+        const cardIndex = getRandomCardIndex();
+        const card = flashcards[cardIndex];
+        const flashcardElement = createFlashcardElement(card, cardIndex);
+        flashcardsContainer.appendChild(flashcardElement);
+        hideRatingButtons();
+        isFlipped = false;
+        flashcardElement.classList.remove('flipped');
+    }
+
+    function setupRatingButtons(cardId) {
+        const buttons = document.querySelectorAll('.rating-button');
+        buttons.forEach(button => {
+            button.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                saveRating(cardId, button.classList[1]);
+                getNextCard();
+            };
+        });
+    }
+
+    // Add event listeners
+    revealButton.addEventListener('click', handleRevealClick);
     refreshButton.addEventListener('click', handleRefreshClick);
-    refreshButton.addEventListener('touchend', handleRefreshClick);
 
     // Initial render
     renderCurrentFlashcard();

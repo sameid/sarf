@@ -218,4 +218,83 @@ button:hover {
 .refresh-button svg {
     width: 24px;
     height: 24px;
+}
+
+.rating-buttons {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.rating-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rating-button.hard {
+    background-color: #dc2626;
+    color: white;
+}
+
+.rating-button.good {
+    background-color: #2563eb;
+    color: white;
+}
+
+.rating-button.easy {
+    background-color: #16a34a;
+    color: white;
+}
+
+.rating-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.rating-button:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .rating-button {
+        padding: 12px 24px;
+        font-size: 1.1rem;
+    }
+}
+
+.reveal-button {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    background-color: #1e1e1e;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.reveal-button:hover {
+    background-color: #2d2d2d;
+    border-color: #444;
+}
+
+.reveal-button:active {
+    background-color: #333;
 } 

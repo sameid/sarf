@@ -152,8 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const backContent = isQuestionFirst ? card.answer : card.question;
 
         flashcard.innerHTML = `
-            <div class="front">${frontContent}</div>
-            <div class="back">${backContent}</div>
+            <div class="front" style="font-family: ${isQuestionFirst ? "'Scheherazade New', serif" : "'Inter', sans-serif"}">${frontContent}</div>
+            <div class="back" style="font-family: ${isQuestionFirst ? "'Inter', sans-serif" : "'Scheherazade New', serif"}">${backContent}</div>
         `;
 
         return flashcard;

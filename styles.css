@@ -202,6 +202,7 @@ button:hover {
     justify-content: center;
     width: 3.5rem;
     height: 3.5rem;
+    z-index: 100;
 }
 
 .refresh-button:hover {
@@ -294,4 +295,61 @@ button:hover {
 
 .reveal-button:active {
     background-color: #333;
+}
+
+.randomize-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    border-radius: 20px;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.randomize-toggle:hover {
+    background-color: #3d3d3d;
+}
+
+.toggle-label {
+
+    font-family: 'Inter', sans-serif;
+}
+
+.toggle-switch {
+    width: 40px;
+    height: 20px;
+    background-color: #444;
+    border-radius: 20px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-color: #fff;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: all 0.3s ease;
+}
+
+.randomize-toggle.active .toggle-switch {
+    background-color: #4CAF50;
+}
+
+.randomize-toggle.active .toggle-switch::after {
+    left: 22px;
 } 

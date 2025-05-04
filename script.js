@@ -2,8 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const flashcardsContainer = document.getElementById('flashcards');
     const refreshButton = document.getElementById('refreshButton');
     const revealButton = document.getElementById('revealButton');
+    const randomizeToggle = document.getElementById('randomizeToggle');
     let currentCardIndex = 0;
     let isFlipped = false;
+    let isRandomized = false; // Default to randomized
 
     // Preloaded flashcards array with Arabic words
     const preloadedFlashcards = [
@@ -181,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         flashcard.className = 'flashcard';
         flashcard.dataset.index = index;
 
-        const isQuestionFirst = Math.random() < 0.5;
+        const isQuestionFirst = isRandomized ? Math.random() < 0.5 : true;
         const frontContent = isQuestionFirst ? card.question : card.answer;
         const backContent = isQuestionFirst ? card.answer : card.question;
 
@@ -292,9 +294,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Function to handle toggle click
+    const handleToggleClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        isRandomized = !isRandomized;
+        randomizeToggle.classList.toggle('active');
+        getNextCard();
+    };
+
     // Add event listeners
     revealButton.addEventListener('click', handleRevealClick);
     refreshButton.addEventListener('click', handleRefreshClick);
+    randomizeToggle.addEventListener('click', handleToggleClick);
 
     // Initial render
     renderCurrentFlashcard();

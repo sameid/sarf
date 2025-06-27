@@ -7,126 +7,107 @@ document.addEventListener('DOMContentLoaded', () => {
     let isFlipped = false;
     let isRandomized = false; // Default to randomized
 
-    // Preloaded flashcards array with Arabic words
-    const preloadedFlashcards = [
-        { question: "جَعَلَ", answer: "to make" },
-        { question: "اَخَذَ", answer: "to take" },
-        { question: "خَلَقَ", answer: "to create" },
-        { question: "نَزَلَ", answer: "to descend" },
-        { question: "كَتَبَ", answer: "to write" },
-        { question: "غَفَرَ", answer: "to forgive / pardon" },
-        { question: "دَخَلَ", answer: "to enter" },
-        { question: "سَجَدَ", answer: "to prostrate" },
-        { question: "كَذَبَ", answer: "to lie" },
-        { question: "قَتَلَ", answer: "to fight / kill?" },
-        { question: "جَدَلَ", answer: "to debate" },
-        { question: "جَهَدَ", answer: "to struggle" },
-        { question: "رَجَعَ", answer: "to return" },
-        { question: "سَفَرَ", answer: "to travel" },
-        { question: "سَلَمَ", answer: "to be safe" },
-        { question: "شَرَكَ", answer: "to share (associate partners)" },
-        { question: "فَسَحَ", answer: "to be spacious" },
-        { question: "سَعَدَ", answer: "to aid / help" },
-        { question: "طَلَقَ", answer: "to free" },
-        { question: "فَجَرَ", answer: "to cleave / open" },
-        { question: "فَطَرَ", answer: "to come apart" },
-        { question: "بَجَّسَ", answer: "to open a passage, of waterflow" },
-        { question: "كَسَبَ", answer: "to gain" },
-        { question: "بَدَعَ", answer: "to originate" },
-        { question: "نَصَرَ", answer: "to help" },
-        { question: "هَدَفَ", answer: "to approach" },
-        { question: "فَتَرَ", answer: "to weaken" },
-        { question: "ذَهَبَ", answer: "to go" },
-        { question: "رَفَعَ", answer: "to raise" },
-        { question: "عَرَفَ", answer: "to know" },
-        { question: "تَرَكَ", answer: "to leave" },
-        { question: "حَكَمَ", answer: "to judge" },
-        { question: "حَشَرَ", answer: "to gather" },
-        { question: "اَكَلَ", answer: "to eat" },
-        { question: "جَلَسَ", answer: "to sit" },
-        { question: "قَرَاَ", answer: "to read" },
-        { question: "خَرَجَ", answer: "to exit" },
-        { question: "وَقَفَ", answer: "to stop / stand" },
-        { question: "ضَرَبَ", answer: "to hit or to strike" },
-        { question: "رَشَدَ", answer: "to be on the right way" },
-        { question: "عَلِمَ", answer: "to know" },
-        { question: "فَهِمَ", answer: "to understand" },
-        { question: "لَعِبَ", answer: "to play" },
-        { question: "شَرِبَ", answer: "to drink" },
-        { question: "سَمِعَ", answer: "to hear" },
-        { question: "عَمِلَ", answer: "to do" },
-        { question: "حَفِزَ", answer: "to guard" },
-        { question: "حَسِبَ", answer: "to account for" },
-        { question: "دَرَجَ", answer: "to go, to walk, to move" },
-        { question: "فَضَلَ", answer: "to have surplus" },
-        { question: "رَكَعَ", answer: "to bow" },
-        { question: "سَاَلَ", answer: "to ask" },
-        { question: "شَرَحَ", answer: "to explain" },
-        { question: "لَعَنَ", answer: "to curse" },
-        { question: "سَرَقَ", answer: "to steal" },
-        { question: "صَبَرَ", answer: "to be patient" },
-        { question: "عَدَلَ", answer: "to be just" },
-        { question: "عَزَمَ", answer: "to decide / to determine" },
-        { question: "فَرِحَ", answer: "to be happy" },
-        { question: "حَزِنَ", answer: "to be sad" },
-        { question: "غَضِبَ", answer: "to become angry" },
-        { question: "حَمِدَ", answer: "to praise" },
-        { question: "شَبِعَ", answer: "to be full (from eating)" },
-        { question: "رَحِمَ", answer: "to have mercy" },
-        { question: "رَكِبَ", answer: "to ride" },
-        { question: "صَحِبَ", answer: "to accompany" },
-        { question: "كَرُمَ", answer: "to be generous" },
-        { question: "حَسُنَ", answer: "to become better" },
-        { question: "قَرُبَ", answer: "to be close" },
-        { question: "ذَاكَرَ", answer: "to discuss with" },
-        { question: "جَالَسَ", answer: "to sit with" },
-        { question: "أَخْبَرَ", answer: "to inform / to narrate" },
-        { question: "أَقْسَمَ", answer: "to pledge" },
-        { question: "أَفْلَحَ", answer: "to be successful" },
-        { question: "إِخْتَلَفَ", answer: "to differ" },
-        { question: "إِسْتَعْجَلَ", answer: "to hurry / to rush" },
-        { question: "رَكَفَ", answer: "to strike" },
-        { question: "حَبَتَ", answer: "to climb, to incline" },
-        { question: "إِنْكَسَرَ", answer: "to get broken, to break" },
-        { question: "إِنْقَطَعَ", answer: "to cut off" },
-        { question: "إِنْهَدَفَ", answer: "" },
-        { question: "إِنْحَرَفَ", answer: "to deviate" },
-        { question: "إِنْقَسَمَ", answer: "to be divided, to be splitted" },
-        { question: "إِنْصَرَفَ", answer: "to depart or to leave" },
-        { question: "إِعْتَصَمَ", answer: "to adhere" },
-        { question: "إِبْتَدَعَ", answer: "to deviate" },
-        { question: "إِسْتَأْدَنَ", answer: "to seek permission" },
-        { question: "عَقَلَ", answer: "to realized" },
-        { question: "فَقَدَ", answer: "to lose, to miss" },
-        { question: "ثَبَتَ", answer: "to be firm" },
-        { question: "نَعِمَ", answer: "to lead a life of ease or comfort" },
-        { question: "يَأِسَ", answer: "to despair, to lose hope" },
-        { question: "يَبِسَ", answer: "to become dry" },
-        { question: "نَدِمَ", answer: "to regret" },
-        { question: "سَهُلَ", answer: "to become easy" },
-        { question: "بَعُدَ", answer: "to be far" },
-        { question: "صَلُحَ", answer: "to be righteous" },
-        { question: "شَرُفَ", answer: "to be honoured" },
-        { question: "بَسَطَ", answer: "to expand or to stretch" },
-        { question: "وَضَعَ", answer: "to place" },
-        { question: "بَثَثَ", answer: "to spread" },
-        { question: "أَكْرَهَ", answer: "to force" },
-        { question: "أَكْمَلَ", answer: "to complete" },
-        { question: "أَحْسَنَ", answer: "to act well, or to write, to do well" },
-        { question: "أَنْعَمَ", answer: "to bestow upon, to bless with, to favour with" },
-        { question: "أَخْلَصَ", answer: "to dedicate" },
-        { question: "تَعَلَّمَ", answer: "to leave" },
-        { question: "تَفَقَّهَ", answer: "to have knowledge of" },
-        { question: "تَبَسَّمَ", answer: "to smile" },
-        { question: "تَحَرَّكَ", answer: "to move, to take action" },
-        { question: "تَأَمَّلَ", answer: "to observe" },
-        { question: "تَوَكَّلَ", answer: "to rely upon, to trust in" }
-    ];
+    // Function to load flashcards from Google Sheets
+    async function loadFlashcardsFromGoogleSheets() {
+        try {
+            const config = window.GOOGLE_SHEETS_CONFIG;
+            if (!config) {
+                console.error('Google Sheets configuration not found');
+                return [];
+            }
 
-    // Load flashcards from localStorage or use preloaded ones
-    let flashcards = JSON.parse(localStorage.getItem('flashcards')) || preloadedFlashcards;
+            // Use Google Sheets API with gviz/tq endpoint for JSON data
+            const sheetId = config.sheetId;
+            const range = config.range;
+            
+            // Create the API URL for JSON data
+            const apiUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&range=${range}`;
+            
+            console.log(apiUrl);
 
+            console.log('Loading flashcards from Google Sheets...');
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const text = await response.text();
+
+            console.log(text);
+
+            const data = JSON.parse(text.substring(47).slice(0, -2));
+            
+            console.log(data);
+
+            const flashcards = parseGoogleSheetsData(data);
+            
+            console.log(`Loaded ${flashcards.length} flashcards from Google Sheets`);
+            return flashcards;
+            
+        } catch (error) {
+            console.error('Error loading flashcards from Google Sheets:', error);
+            // Return empty array if Google Sheets fails
+            return [];
+        }
+    }
+
+    // Function to parse Google Sheets JSON data to flashcards
+    function parseGoogleSheetsData(data) {
+        const flashcards = [];
+        
+        if (!data.table || !data.table.rows) {
+            console.error('Invalid data structure from Google Sheets');
+            return flashcards;
+        }
+        
+        const rows = data.table.rows;
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row.c) continue;
+            
+            // Process all columns in pairs (odd = Arabic, even = English)
+            for (let colIndex = 0; colIndex < row.c.length - 1; colIndex += 2) {
+                const arabicCell = row.c[colIndex];
+                const englishCell = row.c[colIndex + 1];
+                
+                if (arabicCell && englishCell) {
+                    const question = arabicCell.v ? arabicCell.v.toString().trim() : '';
+                    const answer = englishCell.v ? englishCell.v.toString().trim() : '';
+                    
+                    // Skip empty questions or answers
+                    if (question && answer) {
+                        flashcards.push({ question, answer });
+                    }
+                }
+            }
+        }
+        
+        console.log(flashcards);
+        
+        return flashcards;
+    }
+
+    // Initialize flashcards - load from Google Sheets
+    let flashcards = [];
     let ratings = JSON.parse(localStorage.getItem('flashcardRatings')) || {};
+
+    // Initialize the app
+    async function initializeApp() {
+        // Load flashcards from Google Sheets
+        flashcards = await loadFlashcardsFromGoogleSheets();
+        
+        // Save to localStorage for caching
+        localStorage.setItem('flashcards', JSON.stringify(flashcards));
+        
+        // Render the first card
+        if (flashcards.length > 0) {
+            renderCurrentFlashcard();
+        } else {
+            flashcardsContainer.innerHTML = '<div class="error-message">No flashcards loaded. Please check your Google Sheets configuration.</div>';
+        }
+    }
 
     // Function to save flashcards to localStorage
     const saveFlashcards = () => {
@@ -186,14 +167,63 @@ document.addEventListener('DOMContentLoaded', () => {
         const isQuestionFirst = isRandomized ? Math.random() < 0.5 : true;
         const frontContent = isQuestionFirst ? card.question : card.answer;
         const backContent = isQuestionFirst ? card.answer : card.question;
+        const isArabicOnFront = isQuestionFirst ? isArabicText(card.question) : isArabicText(card.answer);
 
         flashcard.innerHTML = `
-            <div class="front" style="font-family: ${isQuestionFirst ? "'Scheherazade New', serif" : "'Inter', sans-serif"}">${frontContent}</div>
-            <div class="back" style="font-family: ${isQuestionFirst ? "'Inter', sans-serif" : "'Scheherazade New', serif"}">${backContent}</div>
+            <div class="front" style="font-family: ${isQuestionFirst ? "'Scheherazade New', serif" : "'Inter', sans-serif"}">
+                <div class="content">${frontContent}</div>
+                ${isArabicOnFront ? '<button class="play-button" onclick="playArabicText(\'' + frontContent.replace(/'/g, '\\\'') + '\')">🔊</button>' : ''}
+            </div>
+            <div class="back" style="font-family: ${isQuestionFirst ? "'Inter', sans-serif" : "'Scheherazade New', serif"}">
+                <div class="content">${backContent}</div>
+                ${!isArabicOnFront && isArabicText(backContent) ? '<button class="play-button" onclick="playArabicText(\'' + backContent.replace(/'/g, '\\\'') + '\')">🔊</button>' : ''}
+            </div>
         `;
 
         return flashcard;
     };
+
+    // Function to check if text contains Arabic characters
+    function isArabicText(text) {
+        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+        return arabicRegex.test(text);
+    }
+
+    // Function to play Arabic text using text-to-speech
+    function playArabicText(text) {
+        if ('speechSynthesis' in window) {
+            // Stop any currently playing speech
+            window.speechSynthesis.cancel();
+
+            text += "ا";
+
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ar-SA'; // Arabic (Saudi Arabia)
+            utterance.rate = 0.8; // Slightly slower for better pronunciation
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // Try to find an Arabic voice
+            const voices = window.speechSynthesis.getVoices();
+            const arabicVoice = voices.find(voice => 
+                voice.lang.startsWith('ar') || 
+                voice.name.toLowerCase().includes('arabic') ||
+                voice.name.toLowerCase().includes('arab')
+            );
+            
+            if (arabicVoice) {
+                utterance.voice = arabicVoice;
+            }
+            
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.log('Text-to-speech not supported in this browser');
+        }
+    }
+
+    // Make the playArabicText function globally available
+    window.playArabicText = playArabicText;
 
     // Function to handle reveal button click
     const handleRevealClick = (e) => {
@@ -226,21 +256,31 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Function to handle refresh button click
-    const handleRefreshClick = (e) => {
+    const handleRefreshClick = async (e) => {
         e.preventDefault();
         e.stopPropagation();
         
-        // Clear the cache and reload the page
-        if ('caches' in window) {
-            caches.keys().then(function(names) {
-                for (let name of names) {
-                    caches.delete(name);
-                }
-            });
-        }
+        // Show loading state
+        flashcardsContainer.innerHTML = '<div class="error-message loading-message">Loading flashcards from Google Sheets...</div>';
         
-        // Force reload the page
-        window.location.reload(true);
+        try {
+            // Reload flashcards from Google Sheets
+            flashcards = await loadFlashcardsFromGoogleSheets();
+            
+            // Save to localStorage for caching
+            localStorage.setItem('flashcards', JSON.stringify(flashcards));
+            
+            // Render the first card
+            if (flashcards.length > 0) {
+                currentCardIndex = 0;
+                renderCurrentFlashcard();
+            } else {
+                flashcardsContainer.innerHTML = '<div class="error-message">No flashcards loaded. Please check your Google Sheets configuration.</div>';
+            }
+        } catch (error) {
+            console.error('Error refreshing flashcards:', error);
+            flashcardsContainer.innerHTML = '<div class="error-message">Failed to load flashcards. Please try again.</div>';
+        }
     };
 
     function showRatingButtons() {
@@ -308,6 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshButton.addEventListener('click', handleRefreshClick);
     randomizeToggle.addEventListener('click', handleToggleClick);
 
-    // Initial render
-    renderCurrentFlashcard();
+    // Initialize the app
+    initializeApp();
 }); 

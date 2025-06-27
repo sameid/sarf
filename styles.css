@@ -111,6 +111,7 @@ button:hover {
     height: 100%;
     backface-visibility: hidden;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
@@ -131,6 +132,12 @@ button:hover {
     color: white;
     border: 1px solid #333;
     transform: rotateY(180deg);
+    font-size: 6rem;
+    line-height: 1.2;
+}
+
+.flashcard .content {
+    margin-bottom: 1rem;
     font-size: 6rem;
     line-height: 1.2;
 }
@@ -352,4 +359,50 @@ button:hover {
 
 .randomize-toggle.active .toggle-switch::after {
     left: 22px;
+}
+
+.error-message {
+    color: #ff6b6b;
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1rem;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    margin: 1rem 0;
+}
+
+.loading-message {
+    color: #4ecdc4;
+    background: rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(78, 205, 196, 0.3);
+}
+
+.play-button {
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #1e1e1e;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    margin-top: 1rem;
+}
+
+.play-button:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.play-button:active {
+    transform: scale(0.95);
 } 

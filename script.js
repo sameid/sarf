@@ -173,10 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="front" style="font-family: ${isQuestionFirst ? "'Scheherazade New', serif" : "'Inter', sans-serif"}">
                 <div class="content">${frontContent}</div>
                 ${isArabicOnFront ? '<button class="play-button" onclick="playArabicText(\'' + frontContent.replace(/'/g, '\\\'') + '\')">🔊</button>' : ''}
+                ${isArabicOnFront ? '<button class="arabic-button" onclick="showArabicModal(\'' + frontContent.replace(/'/g, '\\\'') + '\')">تصريف</button>' : ''}
             </div>
             <div class="back" style="font-family: ${isQuestionFirst ? "'Inter', sans-serif" : "'Scheherazade New', serif"}">
                 <div class="content">${backContent}</div>
                 ${!isArabicOnFront && isArabicText(backContent) ? '<button class="play-button" onclick="playArabicText(\'' + backContent.replace(/'/g, '\\\'') + '\')">🔊</button>' : ''}
+                ${!isArabicOnFront && isArabicText(backContent) ? '<button class="arabic-button" onclick="showArabicModal(\'' + backContent.replace(/'/g, '\\\'') + '\')">تصريف</button>' : ''}
             </div>
         `;
 
@@ -197,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             text += "ا";
 
-            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ar-SA'; // Arabic (Saudi Arabia)
             utterance.rate = 0.8; // Slightly slower for better pronunciation
@@ -347,6 +348,105 @@ document.addEventListener('DOMContentLoaded', () => {
     revealButton.addEventListener('click', handleRevealClick);
     refreshButton.addEventListener('click', handleRefreshClick);
     randomizeToggle.addEventListener('click', handleToggleClick);
+
+    // Modal functionality
+    const modal = document.getElementById('arabicModal');
+    const closeBtn = document.querySelector('.close');
+
+
+    function conjugatePastTense(fullyVocalizedVerb) {
+
+        const base = fullyVocalizedVerb;
+
+
+
+        let plural = base;
+        plural = plural.slice(0, -1) + 'ُ';
+
+        let sakana = base;
+        sakana = sakana.slice(0, -1) + 'ْ';
+
+
+        return [
+          base,
+          base + 'ا',                      // 8. هما (they two, m.)
+          plural + 'وا',                     // 12. هم (they m.)
+          base + 'تْ',                     // 2. هي (she)
+          base + 'تَا',                     // 9. هما (they two, f.)
+          sakana + 'نَ',                      // 13. هن (they f.)
+          sakana + 'تَ',                     // 3. أنتَ (you m.s.)
+          sakana + 'تُمَا',                    // 7. أنتما (you two)
+          sakana + 'تُمْ',                     // 10. أنتم (you pl. m.)
+          sakana + 'تِ',                     // 4. أنتِ (you f.s.)
+          sakana + 'تُمَا',                    // 7. أنتما (you two)
+          sakana + 'تُنَّ',                     // 11. أنتن (you pl. f.)
+          sakana + 'تُ',                     // 5. أنا (I)
+          sakana + 'نَا',                     // 6. نحن (we)
+        ];
+      }
+
+    // Function to show Arabic modal
+    function showArabicModal(arabicText) {
+
+        const conjugations = conjugatePastTense(arabicText);
+        console.log(conjugations);
+
+        const modalBody = document.querySelector('.modal-body');
+        modalBody.innerHTML = `
+            <table class="modal-table">
+                <tbody>
+                    <tr>
+                        <td>${conjugations[2]}</td>
+                        <td>${conjugations[1]}</td>
+                        <td>${conjugations[0]}</td>
+                    </tr>
+                    <tr>
+                        <td>${conjugations[5]}</td>
+                        <td>${conjugations[4]}</td>
+                        <td>${conjugations[3]}</td>
+                    </tr>
+                    <tr>
+                        <td>${conjugations[8]}</td>
+                        <td>${conjugations[7]}</td>
+                        <td>${conjugations[6]}</td>
+                    </tr>
+                    <tr>
+                        <td>${conjugations[11]}</td>
+                        <td>${conjugations[10]}</td>
+                        <td>${conjugations[9]}</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>${conjugations[13]}</td>
+                        <td>${conjugations[12]}</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+        modal.style.display = 'block';
+    }
+
+    // Make the function globally available
+    window.showArabicModal = showArabicModal;
+
+    // Close modal when clicking the X
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modal.style.display === 'block') {
+            modal.style.display = 'none';
+        }
+    });
 
     // Initialize the app
     initializeApp();

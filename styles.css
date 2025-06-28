@@ -405,4 +405,162 @@ button:hover {
 
 .play-button:active {
     transform: scale(0.95);
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #1e1e1e;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.close:hover,
+.close:focus {
+    color: white;
+    text-decoration: none;
+}
+
+.modal-body {
+    padding: 2rem;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+}
+
+/* Arabic button styles */
+.arabic-button {
+    background-color: #2d3748;
+    color: white;
+    border: 1px solid #4a5568;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.8rem;
+    font-family: 'Scheherazade New', serif;
+    margin-top: 1rem;
+    transition: all 0.3s ease;
+}
+
+.arabic-button:hover {
+    background-color: #4a5568;
+    border-color: #718096;
+}
+
+.arabic-button:active {
+    transform: scale(0.98);
+}
+
+/* Modal table styles */
+.modal-table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    background-color: #2d2d2d;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-table thead {
+    flex-shrink: 0;
+}
+
+.modal-table tbody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-table tr {
+    display: flex;
+    flex: 1;
+}
+
+.modal-table th,
+.modal-table td {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-family: 'Scheherazade New', serif;
+    font-size: 2rem;
+    padding: 16px;
+}
+
+.modal-table th {
+    background-color: #1e1e1e;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-family: 'Scheherazade New', serif;
+    border-bottom: 2px solid #444;
+}
+
+.modal-table td {
+    padding: 12px;
+    border-bottom: 1px solid #444;
+    color: #e0e0e0;
+    font-family: 'Scheherazade New', serif;
+    min-height: 40px;
+}
+
+.modal-table tbody tr:hover {
+    background-color: #3d3d3d;
+}
+
+.modal-table .header-style {
+    background-color: #1e1e1e;
+    color: white;
+    font-weight: 600;
+    border-left: 2px solid #444;
 } 

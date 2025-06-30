@@ -23,8 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create the API URL for JSON data
             const apiUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&range=${range}`;
             
-            console.log(apiUrl);
-
             console.log('Loading flashcards from Google Sheets...');
             const response = await fetch(apiUrl);
             
@@ -34,11 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const text = await response.text();
 
-            console.log(text);
-
             const data = JSON.parse(text.substring(47).slice(0, -2));
-            
-            console.log(data);
 
             const flashcards = parseGoogleSheetsData(data);
             
@@ -107,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             flashcardsContainer.innerHTML = '<div class="error-message">No flashcards loaded. Please check your Google Sheets configuration.</div>';
         }
+        updateStats();
     }
 
     // Function to save flashcards to localStorage
@@ -146,8 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Find the card index based on the random number
         for (let i = 0; i < weights.length; i++) {
             random -= weights[i];
-
-            console.log(random);
 
             if (random <= 0) {
                 return i;
@@ -278,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 flashcardsContainer.innerHTML = '<div class="error-message">No flashcards loaded. Please check your Google Sheets configuration.</div>';
             }
+            updateStats();
         } catch (error) {
             console.error('Error refreshing flashcards:', error);
             flashcardsContainer.innerHTML = '<div class="error-message">Failed to load flashcards. Please try again.</div>';
@@ -307,6 +301,37 @@ document.addEventListener('DOMContentLoaded', () => {
             timestamp: Date.now()
         });
         localStorage.setItem('flashcardRatings', JSON.stringify(ratings));
+        updateStats();
+    }
+
+    function updateStats() {
+        const hardCount = document.getElementById('hardCount');
+        const goodCount = document.getElementById('goodCount');
+        const easyCount = document.getElementById('easyCount');
+        
+        let hard = 0, good = 0, easy = 0;
+        
+        // Count the latest rating for each card
+        Object.values(ratings).forEach(cardRatings => {
+            if (cardRatings.length > 0) {
+                const latestRating = cardRatings[cardRatings.length - 1].rating;
+                switch (latestRating) {
+                    case 'hard':
+                        hard++;
+                        break;
+                    case 'good':
+                        good++;
+                        break;
+                    case 'easy':
+                        easy++;
+                        break;
+                }
+            }
+        });
+        
+        hardCount.textContent = hard;
+        goodCount.textContent = good;
+        easyCount.textContent = easy;
     }
 
     function getNextCard() {

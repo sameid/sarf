@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body id="body">
     <div class="container">
@@ -34,6 +35,10 @@
             <span class="toggle-label">Randomize Sides</span>
             <span class="toggle-switch"></span>
         </button>
+        <button id="sequentialToggle" class="sequential-toggle">
+            <span class="toggle-label">Sequential Mode</span>
+            <span class="toggle-switch"></span>
+        </button>
         <button id="refreshButton" class="refresh-button">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 2v6h-6"></path>
@@ -48,6 +53,15 @@
             <button class="rating-button hard">Hard</button>
             <button class="rating-button good">Good</button>
             <button class="rating-button easy">Easy</button>
+        </div>
+    </div>
+    
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2 class="loading-title">Loading Flashcards</h2>
+            <p class="loading-subtitle">Fetching data from Google Sheets...</p>
         </div>
     </div>
     

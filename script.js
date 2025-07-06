@@ -3,9 +3,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshButton = document.getElementById('refreshButton');
     const revealButton = document.getElementById('revealButton');
     const randomizeToggle = document.getElementById('randomizeToggle');
+    const sequentialToggle = document.getElementById('sequentialToggle');
     let currentCardIndex = 0;
     let isFlipped = false;
     let isRandomized = false; // Default to randomized
+    let isSequential = false; // Default to random selection
+
+    function timeout(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Function to show loading screen
+    function showLoadingScreen() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        loadingScreen.classList.remove('hidden');
+    }
+
+    // Function to hide loading screen
+    function hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        loadingScreen.classList.add('hidden');
+    }
 
     // Function to load flashcards from Google Sheets
     async function loadFlashcardsFromGoogleSheets() {
@@ -24,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const apiUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&range=${range}`;
             
             console.log('Loading flashcards from Google Sheets...');
+
+            await timeout(1000);
+
             const response = await fetch(apiUrl);
             
             if (!response.ok) {
@@ -89,6 +110,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize the app
     async function initializeApp() {
+        // Initialize Lucide icons
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+
+        // Show loading screen
+        showLoadingScreen();
+        
         // Load flashcards from Google Sheets
         flashcards = await loadFlashcardsFromGoogleSheets();
         
@@ -102,6 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
             flashcardsContainer.innerHTML = '<div class="error-message">No flashcards loaded. Please check your Google Sheets configuration.</div>';
         }
         updateStats();
+        
+        // Hide loading screen
+        hideLoadingScreen();
     }
 
     // Function to save flashcards to localStorage
@@ -111,6 +143,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to get a weighted random card index based on ratings
     const getRandomCardIndex = () => {
+        // If sequential mode is enabled, go to the next card in order
+        if (isSequential) {
+            currentCardIndex = (currentCardIndex + 1) % flashcards.length;
+            return currentCardIndex;
+        }
+        
         // Calculate weights for each card based on ratings
         const weights = flashcards.map((_, index) => {
             const cardRatings = ratings[index] || [];
@@ -143,12 +181,14 @@ document.addEventListener('DOMContentLoaded', () => {
             random -= weights[i];
 
             if (random <= 0) {
+                currentCardIndex = i;
                 return i;
             }
         }
         
         // Fallback to uniform random selection if something goes wrong
-        return Math.floor(Math.random() * flashcards.length);
+        currentCardIndex = Math.floor(Math.random() * flashcards.length);
+        return currentCardIndex;
     };
 
     // Function to create a flashcard element
@@ -165,12 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
         flashcard.innerHTML = `
             <div class="front" style="font-family: ${isQuestionFirst ? "'Scheherazade New', serif" : "'Inter', sans-serif"}">
                 <div class="content">${frontContent}</div>
-                ${isArabicOnFront ? '<button class="play-button" onclick="playArabicText(\'' + frontContent.replace(/'/g, '\\\'') + '\')">🔊</button>' : ''}
+                ${isArabicOnFront ? '<button class="play-button" onclick="playArabicText(\'' + frontContent.replace(/'/g, '\\\'') + '\')"><i data-lucide="volume-2"></i></button>' : ''}
                 ${isArabicOnFront ? '<button class="arabic-button" onclick="showArabicModal(\'' + frontContent.replace(/'/g, '\\\'') + '\')">تصريف</button>' : ''}
             </div>
             <div class="back" style="font-family: ${isQuestionFirst ? "'Inter', sans-serif" : "'Scheherazade New', serif"}">
                 <div class="content">${backContent}</div>
-                ${!isArabicOnFront && isArabicText(backContent) ? '<button class="play-button" onclick="playArabicText(\'' + backContent.replace(/'/g, '\\\'') + '\')">🔊</button>' : ''}
+                ${!isArabicOnFront && isArabicText(backContent) ? '<button class="play-button" onclick="playArabicText(\'' + backContent.replace(/'/g, '\\\'') + '\')"><i data-lucide="volume-2"></i></button>' : ''}
                 ${!isArabicOnFront && isArabicText(backContent) ? '<button class="arabic-button" onclick="showArabicModal(\'' + backContent.replace(/'/g, '\\\'') + '\')">تصريف</button>' : ''}
             </div>
         `;
@@ -254,8 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         e.stopPropagation();
         
-        // Show loading state
-        flashcardsContainer.innerHTML = '<div class="error-message loading-message">Loading flashcards from Google Sheets...</div>';
+        // Show loading screen
+        showLoadingScreen();
         
         try {
             // Reload flashcards from Google Sheets
@@ -275,6 +315,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error refreshing flashcards:', error);
             flashcardsContainer.innerHTML = '<div class="error-message">Failed to load flashcards. Please try again.</div>';
+        } finally {
+            // Hide loading screen
+            hideLoadingScreen();
         }
     };
 
@@ -369,10 +412,26 @@ document.addEventListener('DOMContentLoaded', () => {
         getNextCard();
     };
 
+    // Function to handle sequential toggle click
+    const handleSequentialToggleClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        isSequential = !isSequential;
+        sequentialToggle.classList.toggle('active');
+        
+        // Reset to first card when entering sequential mode
+        if (isSequential) {
+            currentCardIndex = -1; // Will become 0 on first getNextCard() call
+        }
+        
+        getNextCard();
+    };
+
     // Add event listeners
     revealButton.addEventListener('click', handleRevealClick);
     refreshButton.addEventListener('click', handleRefreshClick);
     randomizeToggle.addEventListener('click', handleToggleClick);
+    sequentialToggle.addEventListener('click', handleSequentialToggleClick);
 
     // Modal functionality
     const modal = document.getElementById('arabicModal');
@@ -380,17 +439,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function conjugatePastTense(fullyVocalizedVerb) {
-
         const base = fullyVocalizedVerb;
-
-
 
         let plural = base;
         plural = plural.slice(0, -1) + 'ُ';
 
         let sakana = base;
         sakana = sakana.slice(0, -1) + 'ْ';
-
 
         return [
           base,

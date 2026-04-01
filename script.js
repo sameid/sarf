@@ -8,6 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const deckLabel = document.getElementById('deckLabel');
     const menuScreen = document.getElementById('menuScreen');
     const menuDecks = document.getElementById('menuDecks');
+    const installButton = document.getElementById('installButton');
+    const iosBanner = document.getElementById('iosBanner');
+    const iosBannerDismiss = document.getElementById('iosBannerDismiss');
+
+    let deferredPrompt = null;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
     let currentCardIndex = 0;
     let isFlipped = false;
@@ -28,6 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.rating-buttons').style.display = 'none';
         flashcardsContainer.innerHTML = '';
         activeDeck = null;
+        // Show install prompts only on menu screen
+        if (deferredPrompt && !localStorage.getItem('pwaInstalled')) {
+            installButton.style.display = 'block';
+        }
+        if (isIOS && !isStandalone && !localStorage.getItem('iosBannerDismissed')) {
+            iosBanner.style.display = 'flex';
+        }
     }
 
     function hideMenu() {
@@ -607,19 +621,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ─── PWA install prompt ───────────────────────────────────────────────────────
 
-    const installButton = document.getElementById('installButton');
-    const iosBanner = document.getElementById('iosBanner');
-    const iosBannerDismiss = document.getElementById('iosBannerDismiss');
-
-    let deferredPrompt = null;
-
     // Android/Chrome — intercept and defer the prompt
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        if (!localStorage.getItem('pwaInstalled')) {
-            installButton.style.display = 'block';
-        }
     });
 
     installButton.addEventListener('click', async () => {
@@ -634,14 +639,6 @@ document.addEventListener('DOMContentLoaded', () => {
         installButton.style.display = 'none';
         localStorage.setItem('pwaInstalled', '1');
     });
-
-    // iOS — show tip banner if not already installed or dismissed
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
-    if (isIOS && !isStandalone && !localStorage.getItem('iosBannerDismissed')) {
-        iosBanner.style.display = 'flex';
-    }
 
     iosBannerDismiss.addEventListener('click', () => {
         iosBanner.style.display = 'none';

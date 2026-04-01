@@ -151,7 +151,6 @@ button:hover {
 .flashcard .front {
     background-color: var(--bg);
     color: var(--text);
-    border: 1px solid var(--border);
     font-size: 6rem;
     line-height: 1.2;
 }
@@ -159,7 +158,6 @@ button:hover {
 .flashcard .back {
     background-color: var(--bg);
     color: var(--text);
-    border: 1px solid var(--accent);
     transform: rotateY(180deg);
     font-size: 6rem;
     line-height: 1.2;
@@ -1083,7 +1081,7 @@ button:hover {
 .splash-arabic {
     font-family: 'Aref Ruqaa Ink', serif;
     font-size: 5rem;
-    color: var(--text);
+    color: #ffffff !important;
     line-height: 1;
     direction: rtl;
 }
@@ -1094,9 +1092,7 @@ button:hover {
 
 /* ─── Install button ───────────────────────────────────────────────────────── */
 .install-button {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
+    margin-top: 2rem;
     background-color: transparent;
     color: var(--text-muted);
     border: 1px solid var(--border-dim);
@@ -1107,7 +1103,7 @@ button:hover {
     text-transform: uppercase;
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease;
-    z-index: 200;
+    align-self: flex-start;
 }
 
 .install-button:hover {
@@ -1121,9 +1117,7 @@ button:hover {
 
 /* ─── iOS banner ───────────────────────────────────────────────────────────── */
 .ios-banner {
-    position: fixed;
-    bottom: 56px;
-    left: 20px;
+    margin-top: 1rem;
     max-width: 260px;
     background-color: var(--bg);
     border: 1px solid var(--border-dim);
@@ -1132,7 +1126,7 @@ button:hover {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    z-index: 200;
+    align-self: flex-start;
 }
 
 .ios-banner span {

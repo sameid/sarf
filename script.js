@@ -81,6 +81,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Load ratings for this deck
         ratings = JSON.parse(localStorage.getItem(`flashcardRatings_${deck.id}`)) || {};
 
+        // Clear any existing card UI so it doesn't flash behind the loading screen
+        flashcardsContainer.innerHTML = '';
+        revealButton.style.display = 'none';
+        document.querySelector('.rating-buttons').style.display = 'none';
+        hideCardChrome();
+
+        // Show loading screen first (covers everything at z-index 9999),
+        // then hide the menu underneath it
+        showLoadingScreen();
         hideMenu();
         await loadDeck(deck);
     }
@@ -88,7 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ─── Loading screen ──────────────────────────────────────────────────────────
 
     function showLoadingScreen() {
-        document.getElementById('loadingScreen').classList.remove('hidden');
+        const el = document.getElementById('loadingScreen');
+        // Appear instantly (no fade-in) so nothing flashes behind it
+        el.style.transition = 'none';
+        el.classList.remove('hidden');
+        // Force reflow so the instant opacity takes effect
+        void el.offsetHeight;
+        // Restore transition for the fade-out later
+        el.style.transition = '';
     }
 
     function hideLoadingScreen() {

@@ -24,6 +24,18 @@ const FLASHCARD_DECKS = [
         sheetId: 'TODO_REPLACE_WITH_MADINAH_BOOK_2_SHEET_ID',
         range: 'TODO_REPLACE_WITH_RANGE',
     },
+    {
+        id: 'madinah-3',
+        name: 'Madinah Book 3 Vocab',
+        sheetId: 'TODO_REPLACE_WITH_MADINAH_BOOK_3_SHEET_ID',
+        range: 'TODO_REPLACE_WITH_RANGE',
+    },
+    {
+        id: 'amb-advance-sarf',
+        name: "AMB's Advance Sarf Vocab",
+        sheetId: 'TODO_REPLACE_WITH_AMB_ADVANCE_SARF_SHEET_ID',
+        range: 'TODO_REPLACE_WITH_RANGE',
+    },
 ];
 
 window.FLASHCARD_DECKS = FLASHCARD_DECKS;

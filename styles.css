@@ -1092,7 +1092,9 @@ button:hover {
 
 /* ─── Install button ───────────────────────────────────────────────────────── */
 .install-button {
-    margin-top: 2rem;
+    position: absolute;
+    bottom: 2rem;
+    left: 2rem;
     background-color: transparent;
     color: var(--text-muted);
     border: 1px solid var(--border-dim);
@@ -1103,7 +1105,6 @@ button:hover {
     text-transform: uppercase;
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease;
-    align-self: flex-start;
 }
 
 .install-button:hover {
@@ -1117,7 +1118,9 @@ button:hover {
 
 /* ─── iOS banner ───────────────────────────────────────────────────────────── */
 .ios-banner {
-    margin-top: 1rem;
+    position: absolute;
+    bottom: 2rem;
+    left: 2rem;
     max-width: 260px;
     background-color: var(--bg);
     border: 1px solid var(--border-dim);
@@ -1126,7 +1129,6 @@ button:hover {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    align-self: flex-start;
 }
 
 .ios-banner span {

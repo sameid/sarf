@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Scheherazade+New:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;700&family=Aref+Ruqaa+Ink:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Scheherazade+New:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;700&family=Aref+Ruqaa:wght@400;700&display=swap');
 
 /* ─── Nothing Phone Design System ─────────────────────────────────────────── */
 :root {
@@ -1079,7 +1079,7 @@ button:hover {
 }
 
 .splash-arabic {
-    font-family: 'Aref Ruqaa Ink', serif;
+    font-family: 'Aref Ruqaa', serif;
     font-size: 5rem;
     color: #ffffff !important;
     line-height: 1;

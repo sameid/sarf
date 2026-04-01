@@ -62,7 +62,7 @@
         <div class="splash-content">
             <p class="splash-subtitle">Arabic Flashcards</p>
             <div class="splash-divider"></div>
-            <p class="splash-arabic">اُدْرُسْ</p>
+            <p class="splash-arabic">صَرْف</p>
             <div class="loading-dots">
                 <span></span>
                 <span></span>
@@ -111,8 +111,24 @@
             </div>
         </div>
     </div>
+
+    <!-- Install button -->
+    <button id="installButton" class="install-button" style="display:none">Add to Home Screen</button>
+
+    <!-- iOS tip banner -->
+    <div id="iosBanner" class="ios-banner" style="display:none">
+        <span>Tap <strong>Share</strong> then <strong>Add to Home Screen</strong></span>
+        <button id="iosBannerDismiss" class="ios-banner-dismiss">&times;</button>
+    </div>
     
     <script src="config.js"></script>
     <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js');
+            });
+        }
+    </script>
 </body>
 </html> 

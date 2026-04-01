@@ -598,10 +598,53 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) lucide.createIcons();
     buildMenu();
 
-    // Splash screen: show for 4 seconds then reveal menu
+    // Splash screen: show for 3 seconds then reveal menu
     const splashScreen = document.getElementById('splashScreen');
     timeout(3000).then(() => {
         splashScreen.classList.add('hidden');
         showMenu();
+    });
+
+    // ─── PWA install prompt ───────────────────────────────────────────────────────
+
+    const installButton = document.getElementById('installButton');
+    const iosBanner = document.getElementById('iosBanner');
+    const iosBannerDismiss = document.getElementById('iosBannerDismiss');
+
+    let deferredPrompt = null;
+
+    // Android/Chrome — intercept and defer the prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (!localStorage.getItem('pwaInstalled')) {
+            installButton.style.display = 'block';
+        }
+    });
+
+    installButton.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installButton.style.display = 'none';
+    });
+
+    window.addEventListener('appinstalled', () => {
+        installButton.style.display = 'none';
+        localStorage.setItem('pwaInstalled', '1');
+    });
+
+    // iOS — show tip banner if not already installed or dismissed
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+    if (isIOS && !isStandalone && !localStorage.getItem('iosBannerDismissed')) {
+        iosBanner.style.display = 'flex';
+    }
+
+    iosBannerDismiss.addEventListener('click', () => {
+        iosBanner.style.display = 'none';
+        localStorage.setItem('iosBannerDismissed', '1');
     });
 });

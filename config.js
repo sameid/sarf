@@ -1,32 +1,33 @@
-// Google Sheets Configuration
-// Replace these values with your actual Google Sheets information
+// Flashcard Deck Configuration
+// Each deck points to a Google Sheet via the public gviz/tq endpoint.
+// sheetId: the ID from the sheet URL (/d/<sheetId>/edit)
+// range:   sheet name + cell range (e.g. 'Sheet1!A1:B100')
 
-const GOOGLE_SHEETS_CONFIG = {
-    // Your Google Sheet ID (found in the URL between /d/ and /edit)
-    // Example: https://docs.google.com/spreadsheets/d/1E_bMFSxC43FrQTP3CsT6n9sjOaSSTFr35hYu7K1ajr8/edit
-    // Sheet ID would be: 1E_bMFSxC43FrQTP3CsT6n9sjOaSSTFr35hYu7K1ajr8
-    sheetId: '1dphQesUqeB__8-qZUPyzzgNI0XzQXCzlTzOnQp8mzKg',
-    
-    // OAuth 2.0 Client ID (get this from Google Cloud Console)
-    // Go to: https://console.cloud.google.com/apis/credentials
-    // Create OAuth 2.0 Client ID for web application
-    clientId: '765498920553-noac3ncbvt6qnm7tgrngp2qonj2cd1of.apps.googleusercontent.com',
-    
-    // API Key (optional fallback - keep for backup)
-    apiKey: 'YOUR_API_KEY_HERE',
-    
-    // Sheet range (e.g., 'Sheet1!A:B' for columns A and B)
-    // First column should be questions, second column should be answers
-    range: 'Verb List Scales!A4:X70',
-    
-    // Use OAuth 2.0 instead of API key
-    useOAuth: true
-};
+const FLASHCARD_DECKS = [
+    {
+        id: 'amb-sarf',
+        name: "AMB's Sarf Class Vocab",
+        sheetId: '1dphQesUqeB__8-qZUPyzzgNI0XzQXCzlTzOnQp8mzKg',
+        range: 'Verb List Scales!A4:X70',
+    },
+    {
+        id: 'madinah-1',
+        name: 'Madinah Book 1 Vocab',
+        sheetId: '1dphQesUqeB__8-qZUPyzzgNI0XzQXCzlTzOnQp8mzKg',
+        range: 'Madinah Book 1!A:B',
+        headerRows: 1,
+        columnMap: { english: 0, arabic: 1 },
+    },
+    {
+        id: 'madinah-2',
+        name: 'Madinah Book 2 Vocab',
+        sheetId: 'TODO_REPLACE_WITH_MADINAH_BOOK_2_SHEET_ID',
+        range: 'TODO_REPLACE_WITH_RANGE',
+    },
+];
 
-// Make configuration available globally
-window.GOOGLE_SHEETS_CONFIG = GOOGLE_SHEETS_CONFIG;
+window.FLASHCARD_DECKS = FLASHCARD_DECKS;
 
-// Export the configuration for Node.js environments
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = GOOGLE_SHEETS_CONFIG;
-} 
+    module.exports = FLASHCARD_DECKS;
+}

@@ -1,310 +1,111 @@
 document.addEventListener('DOMContentLoaded', () => {
     const flashcardsContainer = document.getElementById('flashcards');
-    const refreshButton = document.getElementById('refreshButton');
     const revealButton = document.getElementById('revealButton');
     const randomizeToggle = document.getElementById('randomizeToggle');
     const sequentialToggle = document.getElementById('sequentialToggle');
+    const backButton = document.getElementById('backButton');
+    const clearButton = document.getElementById('clearButton');
+    const deckLabel = document.getElementById('deckLabel');
+    const menuScreen = document.getElementById('menuScreen');
+    const menuDecks = document.getElementById('menuDecks');
+
     let currentCardIndex = 0;
     let isFlipped = false;
-    let isRandomized = false; // Default to randomized
-    let isSequential = false; // Default to random selection
+    let isRandomized = false;
+    let isSequential = false;
+    let activeDeck = null; // currently selected deck object
 
     function timeout(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    // Function to show loading screen
-    function showLoadingScreen() {
-        const loadingScreen = document.getElementById('loadingScreen');
-        loadingScreen.classList.remove('hidden');
-    }
+    // ─── Menu ───────────────────────────────────────────────────────────────────
 
-    // Function to hide loading screen
-    function hideLoadingScreen() {
-        const loadingScreen = document.getElementById('loadingScreen');
-        loadingScreen.classList.add('hidden');
-    }
-
-    // Function to load flashcards from Google Sheets
-    async function loadFlashcardsFromGoogleSheets() {
-        try {
-            const config = window.GOOGLE_SHEETS_CONFIG;
-            if (!config) {
-                console.error('Google Sheets configuration not found');
-                return [];
-            }
-
-            // Use Google Sheets API with gviz/tq endpoint for JSON data
-            const sheetId = config.sheetId;
-            const range = config.range;
-            
-            // Create the API URL for JSON data
-            const apiUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&range=${range}`;
-            
-            console.log('Loading flashcards from Google Sheets...');
-
-            await timeout(1000);
-
-            const response = await fetch(apiUrl);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const text = await response.text();
-
-            const data = JSON.parse(text.substring(47).slice(0, -2));
-
-            const flashcards = parseGoogleSheetsData(data);
-            
-            console.log(`Loaded ${flashcards.length} flashcards from Google Sheets`);
-            return flashcards;
-            
-        } catch (error) {
-            console.error('Error loading flashcards from Google Sheets:', error);
-            // Return empty array if Google Sheets fails
-            return [];
-        }
-    }
-
-    // Function to parse Google Sheets JSON data to flashcards
-    function parseGoogleSheetsData(data) {
-        const flashcards = [];
-        
-        if (!data.table || !data.table.rows) {
-            console.error('Invalid data structure from Google Sheets');
-            return flashcards;
-        }
-        
-        const rows = data.table.rows;
-        
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row.c) continue;
-            
-            // Process all columns in pairs (odd = Arabic, even = English)
-            for (let colIndex = 0; colIndex < row.c.length - 1; colIndex += 2) {
-                const arabicCell = row.c[colIndex];
-                const englishCell = row.c[colIndex + 1];
-                
-                if (arabicCell && englishCell) {
-                    const question = arabicCell.v ? arabicCell.v.toString().trim() : '';
-                    const answer = englishCell.v ? englishCell.v.toString().trim() : '';
-                    
-                    // Skip empty questions or answers
-                    if (question && answer) {
-                        flashcards.push({ question, answer });
-                    }
-                }
-            }
-        }
-        
-        console.log(flashcards);
-        
-        return flashcards;
-    }
-
-    // Initialize flashcards - load from Google Sheets
-    let flashcards = [];
-    let ratings = JSON.parse(localStorage.getItem('flashcardRatings')) || {};
-
-    // Initialize the app
-    async function initializeApp() {
-        // Initialize Lucide icons
-        if (window.lucide) {
-            lucide.createIcons();
-        }
-
-        // Show loading screen
-        showLoadingScreen();
-        
-        // Load flashcards from Google Sheets
-        flashcards = await loadFlashcardsFromGoogleSheets();
-        
-        // Save to localStorage for caching
-        localStorage.setItem('flashcards', JSON.stringify(flashcards));
-        
-        // Render the first card
-        if (flashcards.length > 0) {
-            renderCurrentFlashcard();
-        } else {
-            flashcardsContainer.innerHTML = '<div class="error-message">No flashcards loaded. Please check your Google Sheets configuration.</div>';
-        }
-        updateStats();
-        
-        // Hide loading screen
-        hideLoadingScreen();
-    }
-
-    // Function to save flashcards to localStorage
-    const saveFlashcards = () => {
-        localStorage.setItem('flashcards', JSON.stringify(flashcards));
-    };
-
-    // Function to get a weighted random card index based on ratings
-    const getRandomCardIndex = () => {
-        // If sequential mode is enabled, go to the next card in order
-        if (isSequential) {
-            currentCardIndex = (currentCardIndex + 1) % flashcards.length;
-            return currentCardIndex;
-        }
-        
-        // Calculate weights for each card based on ratings
-        const weights = flashcards.map((_, index) => {
-            const cardRatings = ratings[index] || [];
-            if (cardRatings.length === 0) return 1; // Default weight for unrated cards
-
-            // Get the most recent rating
-            const latestRating = cardRatings[cardRatings.length - 1].rating;
-            
-            // Assign weights based on rating
-            switch (latestRating) {
-                case 'hard':
-                    return 3; // Higher chance for hard cards
-                case 'good':
-                    return 2; // Medium chance for good cards
-                case 'easy':
-                    return 0.5; // Lower chance for easy cards
-                default:
-                    return 1;
-            }
-        });
-
-        // Calculate total weight
-        const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-        
-        // Generate random number between 0 and total weight
-        let random = Math.random() * totalWeight;
-        
-        // Find the card index based on the random number
-        for (let i = 0; i < weights.length; i++) {
-            random -= weights[i];
-
-            if (random <= 0) {
-                currentCardIndex = i;
-                return i;
-            }
-        }
-        
-        // Fallback to uniform random selection if something goes wrong
-        currentCardIndex = Math.floor(Math.random() * flashcards.length);
-        return currentCardIndex;
-    };
-
-    // Function to create a flashcard element
-    const createFlashcardElement = (card, index) => {
-        const flashcard = document.createElement('div');
-        flashcard.className = 'flashcard';
-        flashcard.dataset.index = index;
-
-        const isQuestionFirst = isRandomized ? Math.random() < 0.5 : true;
-        const frontContent = isQuestionFirst ? card.question : card.answer;
-        const backContent = isQuestionFirst ? card.answer : card.question;
-        const isArabicOnFront = isQuestionFirst ? isArabicText(card.question) : isArabicText(card.answer);
-
-        flashcard.innerHTML = `
-            <div class="front" style="font-family: ${isQuestionFirst ? "'Scheherazade New', serif" : "'Inter', sans-serif"}">
-                <div class="content">${frontContent}</div>
-                ${isArabicOnFront ? '<button class="play-button" onclick="playArabicText(\'' + frontContent.replace(/'/g, '\\\'') + '\')"><i data-lucide="volume-2"></i></button>' : ''}
-                ${isArabicOnFront ? '<button class="arabic-button" onclick="showArabicModal(\'' + frontContent.replace(/'/g, '\\\'') + '\')">تصريف</button>' : ''}
-            </div>
-            <div class="back" style="font-family: ${isQuestionFirst ? "'Inter', sans-serif" : "'Scheherazade New', serif"}">
-                <div class="content">${backContent}</div>
-                ${!isArabicOnFront && isArabicText(backContent) ? '<button class="play-button" onclick="playArabicText(\'' + backContent.replace(/'/g, '\\\'') + '\')"><i data-lucide="volume-2"></i></button>' : ''}
-                ${!isArabicOnFront && isArabicText(backContent) ? '<button class="arabic-button" onclick="showArabicModal(\'' + backContent.replace(/'/g, '\\\'') + '\')">تصريف</button>' : ''}
-            </div>
-        `;
-
-        return flashcard;
-    };
-
-    // Function to check if text contains Arabic characters
-    function isArabicText(text) {
-        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
-        return arabicRegex.test(text);
-    }
-
-    // Function to play Arabic text using text-to-speech
-    function playArabicText(text) {
-        if ('speechSynthesis' in window) {
-            // Stop any currently playing speech
-            window.speechSynthesis.cancel();
-
-            text += "ا";
-
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ar-SA'; // Arabic (Saudi Arabia)
-            utterance.rate = 0.8; // Slightly slower for better pronunciation
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-            
-            // Try to find an Arabic voice
-            const voices = window.speechSynthesis.getVoices();
-            const arabicVoice = voices.find(voice => 
-                voice.lang.startsWith('ar') || 
-                voice.name.toLowerCase().includes('arabic') ||
-                voice.name.toLowerCase().includes('arab')
-            );
-            
-            if (arabicVoice) {
-                utterance.voice = arabicVoice;
-            }
-            
-            window.speechSynthesis.speak(utterance);
-        } else {
-            console.log('Text-to-speech not supported in this browser');
-        }
-    }
-
-    // Make the playArabicText function globally available
-    window.playArabicText = playArabicText;
-
-    // Function to handle reveal button click
-    const handleRevealClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const flashcard = document.querySelector('.flashcard');
-        if (flashcard && !isFlipped) {
-            flashcard.style.transform = 'rotateY(180deg)';
-            isFlipped = true;
-            showRatingButtons();
-            setupRatingButtons(flashcard.dataset.index);
-        }
-    };
-
-    // Function to render current flashcard
-    const renderCurrentFlashcard = () => {
+    function showMenu() {
+        menuScreen.classList.remove('hidden');
+        hideCardChrome();
+        revealButton.style.display = 'none';
+        document.querySelector('.rating-buttons').style.display = 'none';
         flashcardsContainer.innerHTML = '';
-        if (flashcards.length > 0) {
-            const flashcardElement = createFlashcardElement(
-                flashcards[currentCardIndex],
-                currentCardIndex
-            );
-            flashcardsContainer.appendChild(flashcardElement);
-            isFlipped = false;
-            hideRatingButtons();
-        } else {
-            flashcardsContainer.innerHTML = '<p>No flashcards available</p>';
-        }
-    };
+        activeDeck = null;
+    }
 
-    // Function to handle refresh button click
-    const handleRefreshClick = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Show loading screen
+    function hideMenu() {
+        menuScreen.classList.add('hidden');
+    }
+
+    function isPlaceholderDeck(deck) {
+        return deck.sheetId.startsWith('TODO') || deck.range.startsWith('TODO');
+    }
+
+    function buildMenu() {
+        const decks = window.FLASHCARD_DECKS || [];
+        menuDecks.innerHTML = '';
+        decks.forEach(deck => {
+            const disabled = isPlaceholderDeck(deck);
+            const btn = document.createElement('button');
+            btn.className = 'menu-deck-button' + (disabled ? ' menu-deck-disabled' : '');
+            btn.disabled = disabled;
+            btn.innerHTML = `<span>${deck.name}</span>${disabled ? '<span class="menu-deck-badge">Soon</span>' : '<span class="menu-deck-arrow">→</span>'}`;
+            if (!disabled) btn.addEventListener('click', () => selectDeck(deck));
+            menuDecks.appendChild(btn);
+        });
+    }
+
+    async function selectDeck(deck) {
+        activeDeck = deck;
+        if (deckLabel) deckLabel.textContent = deck.name;
+
+        // Reset state
+        currentCardIndex = 0;
+        isFlipped = false;
+        isRandomized = false;
+        isSequential = false;
+        randomizeToggle.classList.remove('active');
+        sequentialToggle.classList.remove('active');
+
+        // Load ratings for this deck
+        ratings = JSON.parse(localStorage.getItem(`flashcardRatings_${deck.id}`)) || {};
+
+        hideMenu();
+        await loadDeck(deck);
+    }
+
+    // ─── Loading screen ──────────────────────────────────────────────────────────
+
+    function showLoadingScreen() {
+        document.getElementById('loadingScreen').classList.remove('hidden');
+    }
+
+    function hideLoadingScreen() {
+        document.getElementById('loadingScreen').classList.add('hidden');
+    }
+
+    function showCardChrome() {
+        backButton.style.display = 'flex';
+        randomizeToggle.style.display = 'flex';
+        sequentialToggle.style.display = 'flex';
+        clearButton.style.display = 'block';
+        document.getElementById('statsContainer').style.display = 'flex';
+    }
+
+    function hideCardChrome() {
+        backButton.style.display = 'none';
+        randomizeToggle.style.display = 'none';
+        sequentialToggle.style.display = 'none';
+        clearButton.style.display = 'none';
+        document.getElementById('statsContainer').style.display = 'none';
+    }
+
+    // ─── Data loading ────────────────────────────────────────────────────────────
+
+    async function loadDeck(deck) {
         showLoadingScreen();
-        
+        const minDelay = timeout(1500);
         try {
-            // Reload flashcards from Google Sheets
-            flashcards = await loadFlashcardsFromGoogleSheets();
-            
-            // Save to localStorage for caching
-            localStorage.setItem('flashcards', JSON.stringify(flashcards));
-            
-            // Render the first card
+            flashcards = await loadFlashcardsFromGoogleSheets(deck);
+            localStorage.setItem(`flashcards_${deck.id}`, JSON.stringify(flashcards));
+
             if (flashcards.length > 0) {
                 currentCardIndex = 0;
                 renderCurrentFlashcard();
@@ -313,166 +114,417 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             updateStats();
         } catch (error) {
-            console.error('Error refreshing flashcards:', error);
+            console.error('Error loading deck:', error);
             flashcardsContainer.innerHTML = '<div class="error-message">Failed to load flashcards. Please try again.</div>';
         } finally {
-            // Hide loading screen
+            await minDelay;
             hideLoadingScreen();
+            showCardChrome();
+        }
+    }
+
+    async function loadFlashcardsFromGoogleSheets(deck) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+
+        try {
+            if (!deck) throw new Error('No deck provided');
+
+            const apiUrl = `https://docs.google.com/spreadsheets/d/${deck.sheetId}/gviz/tq?tqx=out:json&range=${encodeURIComponent(deck.range)}`;
+            console.log(`Loading flashcards for "${deck.name}"...`);
+
+            const response = await fetch(apiUrl, { signal: controller.signal });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const text = await response.text();
+
+            if (!text.startsWith('/*O_o*/')) {
+                throw new Error('Unexpected response format — not a valid gviz response. Check your sheet ID and range.');
+            }
+
+            const data = JSON.parse(text.substring(47).slice(0, -2));
+            const cards = parseGoogleSheetsData(data, deck);
+
+            console.log(`Loaded ${cards.length} flashcards`);
+            return cards;
+
+        } catch (error) {
+            console.error('Error loading flashcards from Google Sheets:', error);
+            return [];
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    function parseGoogleSheetsData(data, deck = {}) {
+        const flashcards = [];
+
+        if (!data.table || !data.table.rows) {
+            console.error('Invalid data structure from Google Sheets');
+            return flashcards;
+        }
+
+        const rows = data.table.rows;
+        const skip = deck.headerRows || 0;
+
+        if (deck.columnMap) {
+            // Single card per row with explicit column indices (e.g. Madinah Book 1)
+            const { english: eIdx, arabic: aIdx } = deck.columnMap;
+            for (let i = skip; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row.c) continue;
+                const englishCell = row.c[eIdx];
+                const arabicCell  = row.c[aIdx];
+                if (arabicCell && englishCell) {
+                    const question = arabicCell.v ? arabicCell.v.toString().trim() : '';
+                    const answer   = englishCell.v ? englishCell.v.toString().trim() : '';
+                    if (question && answer) {
+                        flashcards.push({ question, answer });
+                    }
+                }
+            }
+        } else {
+            // Existing behaviour: arabic+english column pairs across the row (e.g. Sarf deck)
+            for (let i = skip; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row.c) continue;
+
+                for (let colIndex = 0; colIndex < row.c.length - 1; colIndex += 2) {
+                    const arabicCell = row.c[colIndex];
+                    const englishCell = row.c[colIndex + 1];
+
+                    if (arabicCell && englishCell) {
+                        const question = arabicCell.v ? arabicCell.v.toString().trim() : '';
+                        const answer = englishCell.v ? englishCell.v.toString().trim() : '';
+                        if (question && answer) {
+                            flashcards.push({ question, answer });
+                        }
+                    }
+                }
+            }
+        }
+
+        console.log(flashcards);
+        return flashcards;
+    }
+
+    // ─── Flashcard state ─────────────────────────────────────────────────────────
+
+    let flashcards = [];
+    let ratings = {};
+
+    const getRandomCardIndex = () => {
+        if (isSequential) {
+            currentCardIndex = (currentCardIndex + 1) % flashcards.length;
+            return currentCardIndex;
+        }
+
+        const weights = flashcards.map((_, index) => {
+            const cardRatings = ratings[index] || [];
+            if (cardRatings.length === 0) return 1;
+            const latestRating = cardRatings[cardRatings.length - 1].rating;
+            switch (latestRating) {
+                case 'hard': return 3;
+                case 'good': return 2;
+                case 'easy': return 0.5;
+                default:     return 1;
+            }
+        });
+
+        const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+        let random = Math.random() * totalWeight;
+
+        for (let i = 0; i < weights.length; i++) {
+            random -= weights[i];
+            if (random <= 0) {
+                currentCardIndex = i;
+                return i;
+            }
+        }
+
+        currentCardIndex = Math.floor(Math.random() * flashcards.length);
+        return currentCardIndex;
+    };
+
+    // ─── Card rendering ──────────────────────────────────────────────────────────
+
+    const createFlashcardElement = (card, index) => {
+        const flashcard = document.createElement('div');
+        flashcard.className = 'flashcard';
+        flashcard.dataset.index = index;
+
+        const isQuestionFirst = isRandomized ? Math.random() < 0.5 : true;
+        const frontContent = isQuestionFirst ? card.question : card.answer;
+        const backContent  = isQuestionFirst ? card.answer   : card.question;
+        const isArabicOnFront = isQuestionFirst ? isArabicText(card.question) : isArabicText(card.answer);
+
+        flashcard.innerHTML = `
+            <div class="front" style="font-family: ${isQuestionFirst ? "'Scheherazade New', serif" : "'Space Mono', monospace"}">
+                <div class="content">${frontContent}</div>
+                ${isArabicOnFront && !activeDeck?.columnMap ? `<button class="play-button" onclick="playArabicText('${frontContent.replace(/'/g, "\\'")}')"><i data-lucide="volume-2"></i></button>` : ''}
+                ${isArabicOnFront && !activeDeck?.columnMap ? `<button class="arabic-button" onclick="showArabicModal('${frontContent.replace(/'/g, "\\'")}')">تصريف</button>` : ''}
+            </div>
+            <div class="back" style="font-family: ${isQuestionFirst ? "'Space Mono', monospace" : "'Scheherazade New', serif"}">
+                <div class="content">${backContent}</div>
+                ${!isArabicOnFront && isArabicText(backContent) && !activeDeck?.columnMap ? `<button class="play-button" onclick="playArabicText('${backContent.replace(/'/g, "\\'")}')"><i data-lucide="volume-2"></i></button>` : ''}
+                ${!isArabicOnFront && isArabicText(backContent) && !activeDeck?.columnMap ? `<button class="arabic-button" onclick="showArabicModal('${backContent.replace(/'/g, "\\'")}')">تصريف</button>` : ''}
+            </div>
+        `;
+
+        return flashcard;
+    };
+
+    function isArabicText(text) {
+        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+        return arabicRegex.test(text);
+    }
+
+    const renderCurrentFlashcard = () => {
+        flashcardsContainer.innerHTML = '';
+        if (flashcards.length > 0) {
+            const el = createFlashcardElement(flashcards[currentCardIndex], currentCardIndex);
+            flashcardsContainer.appendChild(el);
+            if (window.lucide) lucide.createIcons();
+            isFlipped = false;
+            hideRatingButtons();
+        } else {
+            flashcardsContainer.innerHTML = '<p>No flashcards available</p>';
         }
     };
 
-    function showRatingButtons() {
-        const ratingButtons = document.querySelector('.rating-buttons');
-        const revealButton = document.getElementById('revealButton');
-        ratingButtons.style.display = 'flex';
-        revealButton.style.display = 'none';
+    function getNextCard() {
+        const current = document.querySelector('.flashcard');
+        if (current) current.remove();
+        const cardIndex = getRandomCardIndex();
+        const el = createFlashcardElement(flashcards[cardIndex], cardIndex);
+        flashcardsContainer.appendChild(el);
+        if (window.lucide) lucide.createIcons();
+        hideRatingButtons();
+        isFlipped = false;
     }
 
-    function hideRatingButtons() {
-        const ratingButtons = document.querySelector('.rating-buttons');
-        const revealButton = document.getElementById('revealButton');
-        ratingButtons.style.display = 'none';
-        revealButton.style.display = 'block';
-    }
+    // ─── Rating & stats ──────────────────────────────────────────────────────────
 
     function saveRating(cardId, rating) {
-        if (!ratings[cardId]) {
-            ratings[cardId] = [];
+        if (!ratings[cardId]) ratings[cardId] = [];
+        ratings[cardId].push({ rating, timestamp: Date.now() });
+        if (activeDeck) {
+            localStorage.setItem(`flashcardRatings_${activeDeck.id}`, JSON.stringify(ratings));
         }
-        ratings[cardId].push({
-            rating,
-            timestamp: Date.now()
-        });
-        localStorage.setItem('flashcardRatings', JSON.stringify(ratings));
         updateStats();
     }
 
     function updateStats() {
-        const hardCount = document.getElementById('hardCount');
-        const goodCount = document.getElementById('goodCount');
-        const easyCount = document.getElementById('easyCount');
-        
         let hard = 0, good = 0, easy = 0;
-        
-        // Count the latest rating for each card
         Object.values(ratings).forEach(cardRatings => {
             if (cardRatings.length > 0) {
-                const latestRating = cardRatings[cardRatings.length - 1].rating;
-                switch (latestRating) {
-                    case 'hard':
-                        hard++;
-                        break;
-                    case 'good':
-                        good++;
-                        break;
-                    case 'easy':
-                        easy++;
-                        break;
+                switch (cardRatings[cardRatings.length - 1].rating) {
+                    case 'hard': hard++; break;
+                    case 'good': good++; break;
+                    case 'easy': easy++; break;
                 }
             }
         });
-        
-        hardCount.textContent = hard;
-        goodCount.textContent = good;
-        easyCount.textContent = easy;
+        document.getElementById('hardCount').textContent = hard;
+        document.getElementById('goodCount').textContent = good;
+        document.getElementById('easyCount').textContent = easy;
     }
 
-    function getNextCard() {
-        const currentCard = document.querySelector('.flashcard');
-        if (currentCard) {
-            currentCard.remove();
-        }
-        const cardIndex = getRandomCardIndex();
-        const card = flashcards[cardIndex];
-        const flashcardElement = createFlashcardElement(card, cardIndex);
-        flashcardsContainer.appendChild(flashcardElement);
-        hideRatingButtons();
-        isFlipped = false;
-        flashcardElement.classList.remove('flipped');
+    function showRatingButtons() {
+        document.querySelector('.rating-buttons').style.display = 'flex';
+        document.getElementById('revealButton').style.display = 'none';
+    }
+
+    function hideRatingButtons() {
+        document.querySelector('.rating-buttons').style.display = 'none';
+        document.getElementById('revealButton').style.display = 'block';
     }
 
     function setupRatingButtons(cardId) {
-        const buttons = document.querySelectorAll('.rating-button');
-        buttons.forEach(button => {
-            button.onclick = (e) => {
+        document.querySelectorAll('.rating-button').forEach(btn => {
+            btn.onclick = (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                saveRating(cardId, button.classList[1]);
+                saveRating(cardId, btn.classList[1]);
                 getNextCard();
             };
         });
     }
 
-    // Function to handle toggle click
-    const handleToggleClick = (e) => {
+    // ─── TTS ─────────────────────────────────────────────────────────────────────
+
+    function playArabicText(text) {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        text += 'ا';
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ar-SA';
+        utterance.rate = 0.8;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        const voices = window.speechSynthesis.getVoices();
+        const arabicVoice = voices.find(v =>
+            v.lang.startsWith('ar') ||
+            v.name.toLowerCase().includes('arabic') ||
+            v.name.toLowerCase().includes('arab')
+        );
+        if (arabicVoice) utterance.voice = arabicVoice;
+        window.speechSynthesis.speak(utterance);
+    }
+    window.playArabicText = playArabicText;
+
+    // ─── Event listeners ─────────────────────────────────────────────────────────
+
+    revealButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const flashcard = document.querySelector('.flashcard');
+        if (flashcard && !isFlipped) {
+            flashcard.style.transform = 'rotateY(180deg)';
+            isFlipped = true;
+            showRatingButtons();
+            setupRatingButtons(flashcard.dataset.index);
+        }
+    });
+
+    randomizeToggle.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         isRandomized = !isRandomized;
         randomizeToggle.classList.toggle('active');
         getNextCard();
-    };
+    });
 
-    // Function to handle sequential toggle click
-    const handleSequentialToggleClick = (e) => {
+    sequentialToggle.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         isSequential = !isSequential;
         sequentialToggle.classList.toggle('active');
-        
-        // Reset to first card when entering sequential mode
-        if (isSequential) {
-            currentCardIndex = -1; // Will become 0 on first getNextCard() call
-        }
-        
+        if (isSequential) currentCardIndex = -1;
         getNextCard();
-    };
+    });
 
-    // Add event listeners
-    revealButton.addEventListener('click', handleRevealClick);
-    refreshButton.addEventListener('click', handleRefreshClick);
-    randomizeToggle.addEventListener('click', handleToggleClick);
-    sequentialToggle.addEventListener('click', handleSequentialToggleClick);
+    backButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showMenu();
+    });
 
-    // Modal functionality
+    const confirmDialog = document.getElementById('confirmDialog');
+    const confirmOk = document.getElementById('confirmOk');
+    const confirmCancel = document.getElementById('confirmCancel');
+
+    clearButton.addEventListener('click', () => {
+        if (!activeDeck) return;
+        confirmDialog.showModal();
+    });
+
+    confirmOk.addEventListener('click', () => {
+        confirmDialog.close();
+        localStorage.removeItem(`flashcardRatings_${activeDeck.id}`);
+        localStorage.removeItem(`flashcards_${activeDeck.id}`);
+        ratings = {};
+        updateStats();
+    });
+
+    confirmCancel.addEventListener('click', () => {
+        confirmDialog.close();
+    });
+
+    // ─── Modal ───────────────────────────────────────────────────────────────────
+
     const modal = document.getElementById('arabicModal');
     const closeBtn = document.querySelector('.close');
 
-
-    function conjugatePastTense(fullyVocalizedVerb) {
-        const base = fullyVocalizedVerb;
-
-        let plural = base;
-        plural = plural.slice(0, -1) + 'ُ';
-
-        let sakana = base;
-        sakana = sakana.slice(0, -1) + 'ْ';
-
+    function conjugatePastTense(base) {
+        let plural = base.slice(0, -1) + 'ُ';
+        let sakana = base.slice(0, -1) + 'ْ';
         return [
-          base,
-          base + 'ا',                      // 8. هما (they two, m.)
-          plural + 'وا',                     // 12. هم (they m.)
-          base + 'تْ',                     // 2. هي (she)
-          base + 'تَا',                     // 9. هما (they two, f.)
-          sakana + 'نَ',                      // 13. هن (they f.)
-          sakana + 'تَ',                     // 3. أنتَ (you m.s.)
-          sakana + 'تُمَا',                    // 7. أنتما (you two)
-          sakana + 'تُمْ',                     // 10. أنتم (you pl. m.)
-          sakana + 'تِ',                     // 4. أنتِ (you f.s.)
-          sakana + 'تُمَا',                    // 7. أنتما (you two)
-          sakana + 'تُنَّ',                     // 11. أنتن (you pl. f.)
-          sakana + 'تُ',                     // 5. أنا (I)
-          sakana + 'نَا',                     // 6. نحن (we)
+            base,
+            base + 'ا',
+            plural + 'وا',
+            base + 'تْ',
+            base + 'تَا',
+            sakana + 'نَ',
+            sakana + 'تَ',
+            sakana + 'تُمَا',
+            sakana + 'تُمْ',
+            sakana + 'تِ',
+            sakana + 'تُمَا',
+            sakana + 'تُنَّ',
+            sakana + 'تُ',
+            sakana + 'نَا',
         ];
-      }
+    }
 
-    // Function to show Arabic modal
-    function showArabicModal(arabicText) {
+    function conjugateMudari(base) {
+        // Strip the َ from the end of the maadhi to get the root, then build mudari
+        // Convention: caller passes the maadhi form; we derive mudari stem
+        // Mudari: يَفْعَلُ pattern — prefix + root
+        // We strip last haraka from base to get stem
+        const stem = base.slice(0, -1); // remove final damma/fatha
+        const yu  = 'يَ' + stem;        // هُوَ
+        const ta  = 'تَ' + stem;        // هِيَ / أَنْتَ
+        const a   = 'أَ' + stem;        // أَنَا
+        const na  = 'نَ' + stem;        // نَحْنُ
 
-        const conjugations = conjugatePastTense(arabicText);
-        console.log(conjugations);
+        // Add final vowel (ُ for رفع)
+        const f = s => s + 'ُ';
+        return [
+            f(yu),           // هُوَ
+            f(yu) + 'انِ',  // هُمَا (م)
+            f(yu) + 'ونَ',  // هُمْ  -- wait, no harakaat needed on و
+            f(ta),           // هِيَ
+            f(ta) + 'انِ',  // هُمَا (م)
+            ta + 'نَ',       // هُنَّ
+            f(ta),           // أَنْتَ
+            f(ta) + 'انِ',  // أَنْتُمَا
+            f(ta) + 'ونَ',  // أَنْتُمْ
+            ta + 'ينَ',      // أَنْتِ
+            f(ta) + 'انِ',  // أَنْتُمَا (ف)
+            ta + 'نَ',       // أَنْتُنَّ
+            f(a),            // أَنَا
+            f(na),           // نَحْنُ
+        ];
+    }
 
-        const modalBody = document.querySelector('.modal-body');
-        modalBody.innerHTML = `
+    function conjugateAmr(base) {
+        // Amr (imperative) derived from mudari by dropping يَ prefix + adjusting vowels
+        const stem = base.slice(0, -1);
+        const ta = 'تَ' + stem;
+        return [
+            ta.slice(1) + 'ْ',          // أَنْتَ  (افْعَلْ)
+            ta.slice(1) + 'َا',         // أَنْتُمَا
+            ta.slice(1) + 'ُوا',        // أَنْتُمْ
+            ta.slice(1) + 'ِي',         // أَنْتِ
+            ta.slice(1) + 'َا',         // أَنْتُمَا (ف)
+            ta.slice(1) + 'ْنَ',        // أَنْتُنَّ
+        ];
+    }
+
+    function buildTable(conjugations, type) {
+        if (type === 'amr') {
+            return `
+                <div class="modal-table-wrapper">
+                <table class="modal-table">
+                    <tbody>
+                        <tr>
+                            <td>${conjugations[2]}</td>
+                            <td>${conjugations[1]}</td>
+                            <td>${conjugations[0]}</td>
+                        </tr>
+                        <tr>
+                            <td>${conjugations[5]}</td>
+                            <td>${conjugations[4]}</td>
+                            <td>${conjugations[3]}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>`;
+        }
+        // Maadhi & Mudari share the same 14-form 5-row layout
+        return `
+            <div class="modal-table-wrapper">
             <table class="modal-table">
                 <tbody>
                     <tr>
@@ -502,32 +554,54 @@ document.addEventListener('DOMContentLoaded', () => {
                     </tr>
                 </tbody>
             </table>
-        `;
-        modal.style.display = 'block';
+            </div>`;
     }
 
-    // Make the function globally available
+    let modalVerb = null;
+
+    function renderModal(type) {
+        let conjugations;
+        if (type === 'maadhi')      conjugations = conjugatePastTense(modalVerb);
+        else if (type === 'mudari') conjugations = conjugateMudari(modalVerb);
+        else                        conjugations = conjugateAmr(modalVerb);
+
+        document.querySelector('.modal-body').innerHTML = `
+            <div class="modal-tabs">
+                <button class="modal-tab ${type === 'maadhi'  ? 'active' : ''}" onclick="switchModalTab('maadhi')">ماضي</button>
+                <button class="modal-tab ${type === 'mudari'  ? 'active' : ''}" onclick="switchModalTab('mudari')">مضارع</button>
+                <button class="modal-tab ${type === 'amr'     ? 'active' : ''}" onclick="switchModalTab('amr')">أمر</button>
+            </div>
+            ${buildTable(conjugations, type)}
+        `;
+    }
+
+    function showArabicModal(arabicText) {
+        modalVerb = arabicText;
+        renderModal('maadhi');
+        modal.style.display = 'block';
+    }
     window.showArabicModal = showArabicModal;
 
-    // Close modal when clicking the X
-    closeBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
+    function switchModalTab(type) {
+        renderModal(type);
+    }
+    window.switchModalTab = switchModalTab;
+
+    closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+    window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'block') modal.style.display = 'none';
     });
 
-    // Close modal when clicking outside of it
-    window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
+    // ─── Init ────────────────────────────────────────────────────────────────────
 
-    // Close modal with Escape key
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.style.display === 'block') {
-            modal.style.display = 'none';
-        }
-    });
+    if (window.lucide) lucide.createIcons();
+    buildMenu();
 
-    // Initialize the app
-    initializeApp();
-}); 
+    // Splash screen: show for 4 seconds then reveal menu
+    const splashScreen = document.getElementById('splashScreen');
+    timeout(3000).then(() => {
+        splashScreen.classList.add('hidden');
+        showMenu();
+    });
+});

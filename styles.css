@@ -1162,3 +1162,145 @@ button:hover {
 }
 
 /* ─── Back button ──────────────────────────────────────────────────────────── */
+
+/* ─── Weekly Tracker ───────────────────────────────────────────────────────── */
+
+/* Menu tracker button — sits above the deck list with accent treatment */
+.menu-tracker-row {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.menu-tracker-button {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+}
+
+.menu-tracker-button:hover {
+    background-color: var(--accent) !important;
+    color: var(--bg) !important;
+    border-color: var(--accent) !important;
+}
+
+.menu-tracker-button:hover .menu-tracker-badge {
+    color: var(--bg);
+    border-color: var(--bg);
+}
+
+.menu-tracker-badge {
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 8px;
+    text-transform: uppercase;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Tracker stats (comfortable count) in right panel */
+.tracker-stats-container {
+    border-color: var(--accent);
+}
+
+.tracker-comfortable-count {
+    color: var(--accent) !important;
+}
+
+/* Refresh Set button in right panel */
+.tracker-refresh-button {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-dim);
+    padding: 6px 14px;
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.tracker-refresh-button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.tracker-refresh-button:active {
+    opacity: 0.7;
+}
+
+/* Tracker generate/refresh dialog */
+.tracker-dialog {
+    max-width: 360px;
+}
+
+.tracker-dialog-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 1.5rem;
+}
+
+.tracker-dialog-label {
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.tracker-word-input {
+    width: 72px;
+    padding: 6px 10px;
+    margin: 0;
+    border: 1px solid var(--border-dim);
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    text-align: center;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+.tracker-word-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.tracker-dialog-ok {
+    color: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+
+.tracker-dialog-ok:hover {
+    background-color: var(--accent) !important;
+    color: var(--bg) !important;
+}
+
+/* All-comfortable completion message */
+.tracker-complete-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1.5rem;
+    color: var(--accent);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 2rem;
+    line-height: 2;
+}
+
+.tracker-complete-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}

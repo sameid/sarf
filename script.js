@@ -413,7 +413,11 @@ document.addEventListener('DOMContentLoaded', () => {
             flashcard.style.transform = 'rotateY(180deg)';
             isFlipped = true;
             showRatingButtons();
-            setupRatingButtons(flashcard.dataset.index);
+            if (isTrackerMode) {
+                setupTrackerRatingButtons();
+            } else {
+                setupRatingButtons(flashcard.dataset.index);
+            }
         }
     });
 
@@ -422,7 +426,11 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         isRandomized = !isRandomized;
         randomizeToggle.classList.toggle('active');
-        getNextCard();
+        if (isTrackerMode) {
+            renderTrackerCard(trackerIndex);
+        } else {
+            getNextCard();
+        }
     });
 
     sequentialToggle.addEventListener('click', (e) => {
@@ -437,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backButton.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (isTrackerMode) exitTrackerMode();
         showMenu();
     });
 
@@ -623,10 +632,293 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape' && modal.style.display === 'block') modal.style.display = 'none';
     });
 
+    // ─── Weekly Tracker ──────────────────────────────────────────────────────────
+
+    let isTrackerMode = false;
+    let trackerWords = [];
+    let trackerIndex = 0;
+    let trackerIsRefresh = false; // whether the dialog is for a refresh vs first gen
+
+    function loadTrackerData() {
+        return JSON.parse(localStorage.getItem('weeklyTracker')) || null;
+    }
+
+    function saveTrackerData(data) {
+        localStorage.setItem('weeklyTracker', JSON.stringify(data));
+    }
+
+    function isWordComfortable(word) {
+        const r = word.ratings;
+        return r.length >= 10 && r.slice(-10).every(v => v === 'easy');
+    }
+
+    function updateTrackerStats() {
+        const comfortable = trackerWords.filter(w => w.comfortable).length;
+        document.getElementById('trackerComfortableCount').textContent = `${comfortable}/${trackerWords.length}`;
+
+        // Drive the hard/good/easy counters from tracker word ratings (last rating per word)
+        let hard = 0, good = 0, easy = 0;
+        trackerWords.forEach(word => {
+            if (word.ratings.length > 0) {
+                const last = word.ratings[word.ratings.length - 1];
+                if (last === 'hard')      hard++;
+                else if (last === 'good') good++;
+                else if (last === 'easy') easy++;
+            }
+        });
+        document.getElementById('hardCount').textContent = hard;
+        document.getElementById('goodCount').textContent = good;
+        document.getElementById('easyCount').textContent = easy;
+
+        refreshTrackerMenuBadge();
+    }
+
+    function refreshTrackerMenuBadge() {
+        const data = loadTrackerData();
+        const badge = document.getElementById('trackerBadge');
+        if (data && data.words && data.words.length > 0) {
+            const comfortable = data.words.filter(w => w.comfortable).length;
+            badge.textContent = `${comfortable}/${data.words.length}`;
+            badge.style.display = '';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    async function generateTrackerSet(n, existingExcluded) {
+        showLoadingScreen();
+        hideMenu();
+
+        const allDecks = (window.FLASHCARD_DECKS || []).filter(d => !isPlaceholderDeck(d));
+
+        // Fetch all real decks in parallel
+        const results = await Promise.all(allDecks.map(async deck => {
+            try {
+                const cards = await loadFlashcardsFromGoogleSheets(deck);
+                return { deck, cards };
+            } catch (_) {
+                return { deck, cards: [] };
+            }
+        }));
+
+        // Build weighted pool, excluding already-mastered keys
+        const excluded = new Set(existingExcluded || []);
+        const pool = [];
+
+        results.forEach(({ deck, cards }) => {
+            const deckRatings = JSON.parse(localStorage.getItem(`flashcardRatings_${deck.id}`)) || {};
+            cards.forEach((card, cardIndex) => {
+                const key = `${deck.id}:${cardIndex}`;
+                if (excluded.has(key)) return;
+
+                const cardRatings = deckRatings[cardIndex] || [];
+                let weight = 1;
+                if (cardRatings.length > 0) {
+                    const last = cardRatings[cardRatings.length - 1].rating;
+                    if (last === 'hard')      weight = 3;
+                    else if (last === 'good') weight = 2;
+                    else if (last === 'easy') weight = 0.5;
+                }
+
+                pool.push({ deckId: deck.id, cardIndex, question: card.question, answer: card.answer, columnMap: deck.columnMap || null, weight });
+            });
+        });
+
+        // Weighted sampling without replacement
+        const available = [...pool];
+        const count = Math.min(n, available.length);
+        const selected = [];
+
+        for (let i = 0; i < count; i++) {
+            const totalWeight = available.reduce((s, c) => s + c.weight, 0);
+            let rand = Math.random() * totalWeight;
+            let chosen = available.length - 1;
+            for (let j = 0; j < available.length; j++) {
+                rand -= available[j].weight;
+                if (rand <= 0) { chosen = j; break; }
+            }
+            selected.push(available.splice(chosen, 1)[0]);
+        }
+
+        trackerWords = selected.map(item => ({
+            deckId: item.deckId,
+            cardIndex: item.cardIndex,
+            question: item.question,
+            answer: item.answer,
+            columnMap: item.columnMap,
+            ratings: [],
+            comfortable: false
+        }));
+
+        saveTrackerData({
+            words: trackerWords,
+            createdAt: Date.now(),
+            excludedCardKeys: [...excluded]
+        });
+
+        trackerIndex = 0;
+        await timeout(500);
+        hideLoadingScreen();
+        enterTrackerMode();
+    }
+
+    function enterTrackerMode() {
+        isTrackerMode = true;
+        hideMenu();
+
+        // Reset randomize state cleanly
+        isRandomized = false;
+        randomizeToggle.classList.remove('active');
+
+        // Configure chrome for tracker
+        backButton.style.display = 'flex';
+        randomizeToggle.style.display = 'flex';
+        sequentialToggle.style.display = 'none';
+        clearButton.style.display = 'none';
+        document.getElementById('statsContainer').style.display = 'flex';
+        document.getElementById('trackerStatsContainer').style.display = 'flex';
+        document.getElementById('trackerRefreshButton').style.display = 'block';
+
+        updateTrackerStats();
+        advanceToNextTrackerCard(0);
+    }
+
+    function exitTrackerMode() {
+        isTrackerMode = false;
+        isRandomized = false;
+        randomizeToggle.classList.remove('active');
+        document.getElementById('trackerStatsContainer').style.display = 'none';
+        document.getElementById('trackerRefreshButton').style.display = 'none';
+        activeDeck = null;
+    }
+
+    function advanceToNextTrackerCard(startIdx) {
+        const total = trackerWords.length;
+        if (total === 0) return;
+
+        // Find first non-comfortable word starting at startIdx
+        for (let i = 0; i < total; i++) {
+            const idx = (startIdx + i) % total;
+            if (!trackerWords[idx].comfortable) {
+                trackerIndex = idx;
+                renderTrackerCard(idx);
+                return;
+            }
+        }
+
+        // All words comfortable
+        trackerIndex = -1;
+        flashcardsContainer.innerHTML = '';
+        revealButton.style.display = 'none';
+        document.querySelector('.rating-buttons').style.display = 'none';
+        flashcardsContainer.innerHTML = `
+            <div class="tracker-complete-message">
+                <span class="tracker-complete-icon">✓</span>
+                All words comfortable.<br>Refresh for a new set.
+            </div>`;
+    }
+
+    function renderTrackerCard(idx) {
+        const word = trackerWords[idx];
+        // Point activeDeck at a minimal object so createFlashcardElement renders correctly
+        activeDeck = { id: word.deckId, columnMap: word.columnMap };
+        flashcards = [{ question: word.question, answer: word.answer }];
+        currentCardIndex = 0;
+        renderCurrentFlashcard();
+    }
+
+    function setupTrackerRatingButtons() {
+        document.querySelectorAll('.rating-button').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const rating = btn.classList[1]; // 'hard', 'good', 'easy'
+                saveTrackerRating(rating);
+            };
+        });
+    }
+
+    function saveTrackerRating(rating) {
+        const word = trackerWords[trackerIndex];
+        word.ratings.push(rating);
+
+        if (!word.comfortable && isWordComfortable(word)) {
+            word.comfortable = true;
+        }
+
+        // Also persist to the deck's own ratings (improves weighted sampling on future generations)
+        const deckRatings = JSON.parse(localStorage.getItem(`flashcardRatings_${word.deckId}`)) || {};
+        if (!deckRatings[word.cardIndex]) deckRatings[word.cardIndex] = [];
+        deckRatings[word.cardIndex].push({ rating, timestamp: Date.now() });
+        localStorage.setItem(`flashcardRatings_${word.deckId}`, JSON.stringify(deckRatings));
+
+        // Persist tracker state
+        const data = loadTrackerData();
+        if (data) {
+            data.words = trackerWords;
+            saveTrackerData(data);
+        }
+
+        updateTrackerStats();
+        advanceToNextTrackerCard((trackerIndex + 1) % trackerWords.length);
+    }
+
+    function showTrackerDialog(isRefresh) {
+        trackerIsRefresh = isRefresh;
+        const title = document.getElementById('trackerDialogTitle');
+        const okBtn = document.getElementById('trackerDialogOk');
+        title.textContent = isRefresh ? 'Refresh tracker set' : 'Generate a new tracker set';
+        okBtn.textContent = isRefresh ? 'Refresh' : 'Generate';
+        document.getElementById('trackerDialog').showModal();
+    }
+
+    // Tracker dialog buttons
+    document.getElementById('trackerDialogCancel').addEventListener('click', () => {
+        document.getElementById('trackerDialog').close();
+        // If no tracker exists yet and user cancels, go back to menu
+        if (!loadTrackerData()) showMenu();
+    });
+
+    document.getElementById('trackerDialogOk').addEventListener('click', () => {
+        const n = parseInt(document.getElementById('trackerWordCount').value, 10);
+        if (!n || n < 1) return;
+        document.getElementById('trackerDialog').close();
+
+        if (trackerIsRefresh) {
+            // Permanently exclude all currently comfortable words
+            const data = loadTrackerData();
+            const existing = data ? (data.excludedCardKeys || []) : [];
+            const newExcluded = [...new Set([
+                ...existing,
+                ...trackerWords.filter(w => w.comfortable).map(w => `${w.deckId}:${w.cardIndex}`)
+            ])];
+            generateTrackerSet(n, newExcluded);
+        } else {
+            const data = loadTrackerData();
+            const existing = data ? (data.excludedCardKeys || []) : [];
+            generateTrackerSet(n, existing);
+        }
+    });
+
+    document.getElementById('trackerButton').addEventListener('click', () => {
+        const data = loadTrackerData();
+        if (data && data.words && data.words.length > 0) {
+            trackerWords = data.words;
+            enterTrackerMode();
+        } else {
+            showTrackerDialog(false);
+        }
+    });
+
+    document.getElementById('trackerRefreshButton').addEventListener('click', () => {
+        showTrackerDialog(true);
+    });
+
     // ─── Init ────────────────────────────────────────────────────────────────────
 
     if (window.lucide) lucide.createIcons();
     buildMenu();
+    refreshTrackerMenuBadge();
 
     // Splash screen: show for 3 seconds then reveal menu
     const splashScreen = document.getElementById('splashScreen');

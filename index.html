@@ -38,6 +38,12 @@
                     <span class="stat-count" id="easyCount">0</span>
                 </div>
             </div>
+            <div id="trackerStatsContainer" class="stats-container tracker-stats-container" style="display:none">
+                <div class="stat-item">
+                    <span class="stat-label">Comfortable</span>
+                    <span class="stat-count tracker-comfortable-count" id="trackerComfortableCount">0/0</span>
+                </div>
+            </div>
             <button id="randomizeToggle" class="randomize-toggle" style="display:none">
                 <span class="toggle-label">Randomize Sides</span>
                 <span class="toggle-switch"></span>
@@ -47,6 +53,7 @@
                 <span class="toggle-switch"></span>
             </button>
             <button id="clearButton" class="clear-button" style="display:none">Clear</button>
+            <button id="trackerRefreshButton" class="tracker-refresh-button" style="display:none">Refresh Set</button>
         </div>
         <div id="flashcards" class="flashcards-container"></div>
         <button id="revealButton" class="reveal-button" style="display:none">Reveal Answer</button>
@@ -76,6 +83,12 @@
         <div class="menu-content">
             <p class="menu-subtitle">Arabic Flashcards</p>
             <h1 class="menu-title">Select a Deck</h1>
+            <div class="menu-tracker-row">
+                <button id="trackerButton" class="menu-deck-button menu-tracker-button">
+                    <span>Weekly Tracker</span>
+                    <span id="trackerBadge" class="menu-tracker-badge" style="display:none">0/0</span>
+                </button>
+            </div>
             <div class="menu-decks" id="menuDecks">
                 <!-- Deck buttons injected by script.js -->
             </div>
@@ -118,6 +131,19 @@
             </div>
         </div>
     </div>
+
+    <!-- Tracker Dialog -->
+    <dialog id="trackerDialog" class="confirm-dialog tracker-dialog">
+        <p class="confirm-message" id="trackerDialogTitle">Generate a new tracker set</p>
+        <div class="tracker-dialog-input-row">
+            <label class="tracker-dialog-label" for="trackerWordCount">How many words?</label>
+            <input type="number" id="trackerWordCount" class="tracker-word-input" value="20" min="1" max="500">
+        </div>
+        <div class="confirm-buttons">
+            <button id="trackerDialogCancel" class="confirm-btn-cancel">Cancel</button>
+            <button id="trackerDialogOk" class="confirm-btn-ok tracker-dialog-ok">Generate</button>
+        </div>
+    </dialog>
 
     <script src="config.js"></script>
     <script src="script.js"></script>

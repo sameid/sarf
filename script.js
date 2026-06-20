@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('trackerRefreshButton').style.display = 'block';
 
         updateTrackerStats();
-        advanceToNextTrackerCard(0);
+        advanceToNextTrackerCard();
     }
 
     function exitTrackerMode() {
@@ -789,33 +789,72 @@ document.addEventListener('DOMContentLoaded', () => {
         randomizeToggle.classList.remove('active');
         document.getElementById('trackerStatsContainer').style.display = 'none';
         document.getElementById('trackerRefreshButton').style.display = 'none';
+        const notif = document.getElementById('trackerCompleteNotif');
+        if (notif) notif.remove();
         activeDeck = null;
     }
 
-    function advanceToNextTrackerCard(startIdx) {
+    function advanceToNextTrackerCard() {
         const total = trackerWords.length;
         if (total === 0) return;
 
-        // Find first non-comfortable word starting at startIdx
+        // Check if all words are comfortable — show notification but keep cycling
+        const allComfortable = trackerWords.every(w => w.comfortable);
+        if (allComfortable) showTrackerCompleteNotification();
+
+        // Build weighted pool, excluding the current card to avoid immediate repeat
+        const candidates = [];
         for (let i = 0; i < total; i++) {
-            const idx = (startIdx + i) % total;
-            if (!trackerWords[idx].comfortable) {
-                trackerIndex = idx;
-                renderTrackerCard(idx);
-                return;
+            if (i === trackerIndex && total > 1) continue;
+            const word = trackerWords[i];
+            let weight;
+            if (word.comfortable) {
+                weight = 0.1;
+            } else if (word.ratings.length === 0) {
+                weight = 1;
+            } else {
+                const last = word.ratings[word.ratings.length - 1];
+                if (last === 'hard')      weight = 3;
+                else if (last === 'good') weight = 2;
+                else                      weight = 0.5;
             }
+            candidates.push({ idx: i, weight });
         }
 
-        // All words comfortable
-        trackerIndex = -1;
-        flashcardsContainer.innerHTML = '';
-        revealButton.style.display = 'none';
-        document.querySelector('.rating-buttons').style.display = 'none';
-        flashcardsContainer.innerHTML = `
-            <div class="tracker-complete-message">
-                <span class="tracker-complete-icon">✓</span>
-                All words comfortable.<br>Refresh for a new set.
+        // Weighted random pick
+        const totalWeight = candidates.reduce((s, c) => s + c.weight, 0);
+        let rand = Math.random() * totalWeight;
+        let chosen = candidates[candidates.length - 1].idx;
+        for (const c of candidates) {
+            rand -= c.weight;
+            if (rand <= 0) { chosen = c.idx; break; }
+        }
+
+        trackerIndex = chosen;
+        renderTrackerCard(chosen);
+    }
+
+    function showTrackerCompleteNotification() {
+        if (document.getElementById('trackerCompleteNotif')) return;
+
+        const notif = document.createElement('div');
+        notif.id = 'trackerCompleteNotif';
+        notif.className = 'tracker-complete-notif';
+        notif.innerHTML = `
+            <span>All words comfortable</span>
+            <div class="tracker-complete-notif-actions">
+                <button id="trackerNotifRefresh" class="tracker-notif-btn">Refresh</button>
+                <button id="trackerNotifContinue" class="tracker-notif-btn">Continue</button>
             </div>`;
+        document.querySelector('.container').appendChild(notif);
+
+        document.getElementById('trackerNotifRefresh').addEventListener('click', () => {
+            notif.remove();
+            showTrackerDialog(true);
+        });
+        document.getElementById('trackerNotifContinue').addEventListener('click', () => {
+            notif.remove();
+        });
     }
 
     function renderTrackerCard(idx) {
@@ -860,7 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateTrackerStats();
-        advanceToNextTrackerCard((trackerIndex + 1) % trackerWords.length);
+        advanceToNextTrackerCard();
     }
 
     function showTrackerDialog(isRefresh) {

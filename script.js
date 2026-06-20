@@ -959,6 +959,11 @@ document.addEventListener('DOMContentLoaded', () => {
     buildMenu();
     refreshTrackerMenuBadge();
 
+    // Request persistent storage so the browser won't evict localStorage under pressure
+    if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist();
+    }
+
     // Splash screen: show for 3 seconds then reveal menu
     const splashScreen = document.getElementById('splashScreen');
     timeout(3000).then(() => {
